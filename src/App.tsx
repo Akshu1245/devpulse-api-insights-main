@@ -10,6 +10,7 @@ import ErrorBoundary from "@/components/ErrorBoundary";
 import SeoMeta from "@/components/SeoMeta";
 import SplashScreen from "./components/SplashScreen";
 import { DevPulseIDEProvider } from "@/context/DevPulseIDEContext";
+import { Analytics } from "@vercel/analytics/react";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
@@ -45,6 +46,7 @@ const App = () => {
           <ErrorBoundary>
           <Toaster />
           <Sonner />
+          <Analytics />
           {!splashDone && <SplashScreen onComplete={() => setSplashDone(true)} />}
           <BrowserRouter>
             <SeoMeta />
