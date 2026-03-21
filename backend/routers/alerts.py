@@ -3,6 +3,7 @@ from __future__ import annotations
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 
+from services.alerts_table import get_alerts_table
 from services.auth_guard import assert_same_user, get_current_user_id
 from services.supabase_client import supabase
 
@@ -12,8 +13,9 @@ router = APIRouter(tags=["alerts"])
 @router.get("/alerts/{user_id}")
 def list_alerts(user_id: str, auth_user_id: str = Depends(get_current_user_id)):
     assert_same_user(auth_user_id, user_id)
+    table_name = get_alerts_table()
     res = (
-        supabase.table("security_alerts")
+        supabase.table(table_name)
         .select("*")
         .eq("user_id", user_id)
         .eq("resolved", False)
@@ -34,8 +36,9 @@ def resolve_alert(
     auth_user_id: str = Depends(get_current_user_id),
 ):
     assert_same_user(auth_user_id, req.user_id)
+    table_name = get_alerts_table()
     existing = (
-        supabase.table("security_alerts")
+        supabase.table(table_name)
         .select("*")
         .eq("id", alert_id)
         .eq("user_id", req.user_id)
@@ -49,7 +52,7 @@ def resolve_alert(
             detail="Forbidden: alert does not belong to this user",
         )
     res = (
-        supabase.table("security_alerts")
+        supabase.table(table_name)
         .update({"resolved": True})
         .eq("id", alert_id)
         .eq("user_id", req.user_id)

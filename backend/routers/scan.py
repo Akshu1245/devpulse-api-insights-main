@@ -3,6 +3,7 @@ from __future__ import annotations
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 
+from services.alerts_table import get_alerts_table
 from services.auth_guard import assert_same_user, get_current_user_id
 from services.scanner import run_security_probe
 from services.supabase_client import supabase
@@ -49,7 +50,7 @@ async def scan(req: ScanRequest, auth_user_id: str = Depends(get_current_user_id
     if rows:
         supabase.table("api_scans").insert(rows).execute()
     if alert_rows:
-        supabase.table("security_alerts").insert(alert_rows).execute()
+        supabase.table(get_alerts_table()).insert(alert_rows).execute()
 
     return {"issues": issues, "endpoint": req.endpoint.strip()}
 
