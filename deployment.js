@@ -14,6 +14,10 @@ import https from 'https';
 import { URL } from 'url';
 import { execSync } from 'child_process';
 
+const log = (...args) => {
+  process.stdout.write(args.join(' ') + '\n');
+};
+
 // Load environment variables
 const loadEnv = () => {
   const envFile = '.env.local';
@@ -90,7 +94,7 @@ const hasSupabaseCli = () => {
 
 // 1. Deploy Edge Functions
 const deployFunctions = async () => {
-  console.log('\n📦 Deploying Edge Functions...');
+  log('\n📦 Deploying Edge Functions...');
   const functionsDir = path.join(process.cwd(), 'supabase', 'functions');
   
   const functions = fs.readdirSync(functionsDir)
@@ -109,14 +113,14 @@ const deployFunctions = async () => {
       continue;
     }
 
-    console.log(`  ⏳ Deploying ${fnName}...`);
+    log(`  ⏳ Deploying ${fnName}...`);
 
     try {
       if (cliAvailable) {
         execSync(`supabase functions deploy ${fnName} --project-ref ${PROJECT_REF}`, {
           stdio: 'ignore'
         });
-        console.log(`  ✅ ${fnName} deployed`);
+        log(`  ✅ ${fnName} deployed`);
       } else {
         const res = await fetchSupabase('/rest/v1/functions', {
           method: 'POST',
@@ -127,9 +131,9 @@ const deployFunctions = async () => {
         });
 
         if (res.status === 201 || res.status === 200) {
-          console.log(`  ℹ️ ${fnName} metadata created (code not deployed)`);
+          log(`  ℹ️ ${fnName} metadata created (code not deployed)`);
         } else {
-          console.log(`  ℹ️ ${fnName} metadata exists (code deployment pending)`);
+          log(`  ℹ️ ${fnName} metadata exists (code deployment pending)`);
         }
       }
     } catch (e) {
@@ -137,12 +141,12 @@ const deployFunctions = async () => {
     }
   }
 
-  console.log('✅ Edge Functions deployment complete\n');
+  log('✅ Edge Functions deployment complete\n');
 };
 
 // 2. Set Environment Secrets
 const setSecrets = async () => {
-  console.log('🔐 Setting Environment Secrets...');
+  log('🔐 Setting Environment Secrets...');
   
   try {
     const res = await fetchSupabase('/rest/v1/projects/secrets', {
@@ -154,25 +158,25 @@ const setSecrets = async () => {
     });
 
     if (res.status === 201 || res.status === 200) {
-      console.log('✅ KEY_ENCRYPTION_SECRET set');
+      log('✅ KEY_ENCRYPTION_SECRET set');
     } else if (res.data?.message?.includes('exist')) {
-      console.log('ℹ️ KEY_ENCRYPTION_SECRET already exists');
+      log('ℹ️ KEY_ENCRYPTION_SECRET already exists');
     } else {
       console.warn('⚠️ Could not set secrets:', res.data);
     }
   } catch (e) {
     console.warn('⚠️ Could not set secrets via API:', e.message);
-    console.log('   → Set manually in Supabase Dashboard > Edge Functions > Settings');
+    log('   → Set manually in Supabase Dashboard > Edge Functions > Settings');
   }
 };
 
 // 3. Run Migrations
 const runMigrations = async () => {
-  console.log('\n📊 Checking Database Migrations...');
+  log('\n📊 Checking Database Migrations...');
   
   const migrationsDir = path.join(process.cwd(), 'supabase', 'migrations');
   if (!fs.existsSync(migrationsDir)) {
-    console.log('⚠️ No migrations directory found');
+    log('⚠️ No migrations directory found');
     return;
   }
 
@@ -180,13 +184,13 @@ const runMigrations = async () => {
     .filter(f => f.endsWith('.sql'))
     .sort();
 
-  console.log(`📝 Found ${migrations.length} migration(s):`);
-  migrations.forEach(m => console.log(`   - ${m}`));
+  log(`📝 Found ${migrations.length} migration(s):`);
+  migrations.forEach(m => log(`   - ${m}`));
   
-  console.log('\n⚠️ Run migrations manually via:');
-  console.log('   1. Supabase Dashboard > SQL Editor');
-  console.log('   2. Copy content from supabase/migrations/*.sql in order');
-  console.log('   3. Execute each migration');
+  log('\n⚠️ Run migrations manually via:');
+  log('   1. Supabase Dashboard > SQL Editor');
+  log('   2. Copy content from supabase/migrations/*.sql in order');
+  log('   3. Execute each migration');
 };
 
 // 4. Verification
@@ -195,25 +199,25 @@ const verify = async () => {
   const functionCount = fs.readdirSync(functionsDir)
     .filter(f => fs.statSync(path.join(functionsDir, f)).isDirectory() && f !== '_shared').length;
 
-  console.log('\n✓ Deployment Configuration Ready');
-  console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-  console.log(`Supabase URL: ${SUPABASE_URL}`);
-  console.log(`KEY_ENCRYPTION_SECRET: ${KEY_ENCRYPTION_SECRET.substring(0, 8)}...`);
-  console.log(`Functions: ${functionCount} configured`);
-  console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
+  log('\n✓ Deployment Configuration Ready');
+  log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+  log(`Supabase URL: ${SUPABASE_URL}`);
+  log(`KEY_ENCRYPTION_SECRET: ${KEY_ENCRYPTION_SECRET.substring(0, 8)}...`);
+  log(`Functions: ${functionCount} configured`);
+  log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
 
-  console.log('📋 Next Steps:');
-  console.log('1. ✅ Edge Functions configured');
-  console.log('2. ✅ Environment secrets configured');
-  console.log('3. ⏳ Manual: Run database migrations via Supabase Dashboard');
-  console.log('4. ⏳ If CLI was unavailable: deploy function code via Supabase CLI');
-  console.log('5. ⏳ Test: Add API key in HealthDashboard UI');
-  console.log('6. ⏳ Verify: Key shows masked in UI, works in probes\n');
+  log('📋 Next Steps:');
+  log('1. ✅ Edge Functions configured');
+  log('2. ✅ Environment secrets configured');
+  log('3. ⏳ Manual: Run database migrations via Supabase Dashboard');
+  log('4. ⏳ If CLI was unavailable: deploy function code via Supabase CLI');
+  log('5. ⏳ Test: Add API key in HealthDashboard UI');
+  log('6. ⏳ Verify: Key shows masked in UI, works in probes\n');
 };
 
 // Main
 const main = async () => {
-  console.log('🚀 DevPulse Deployment Script\n');
+  log('🚀 DevPulse Deployment Script\n');
   
   try {
     await deployFunctions();
@@ -221,8 +225,8 @@ const main = async () => {
     await runMigrations();
     await verify();
     
-    console.log('✨ Deployment preparation complete!');
-    console.log('   Check DEPLOYMENT_GUIDE.md for detailed setup instructions.\n');
+    log('✨ Deployment preparation complete!');
+    log('   Check DEPLOYMENT_GUIDE.md for detailed setup instructions.\n');
   } catch (e) {
     console.error('❌ Deployment error:', e.message);
     process.exit(1);

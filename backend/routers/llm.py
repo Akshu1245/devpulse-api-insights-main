@@ -4,9 +4,10 @@ from collections import defaultdict
 from datetime import date, datetime, timedelta, timezone
 from decimal import Decimal
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 from pydantic import BaseModel, Field
 
+from services.auth_guard import assert_same_user, get_current_user_id
 from services.supabase_client import supabase
 
 router = APIRouter(prefix="/llm", tags=["llm"])
@@ -24,7 +25,8 @@ def _parse_ts(s: str) -> datetime:
 
 
 @router.post("/log")
-def log_usage(req: LogRequest):
+def log_usage(req: LogRequest, auth_user_id: str = Depends(get_current_user_id)):
+    assert_same_user(auth_user_id, req.user_id)
     row = {
         "user_id": req.user_id,
         "model": req.model,
@@ -37,7 +39,8 @@ def log_usage(req: LogRequest):
 
 
 @router.get("/usage/{user_id}")
-def usage(user_id: str):
+def usage(user_id: str, auth_user_id: str = Depends(get_current_user_id)):
+    assert_same_user(auth_user_id, user_id)
     res = (
         supabase.table("llm_usage")
         .select("*")
@@ -82,7 +85,8 @@ def usage(user_id: str):
 
 
 @router.get("/summary/{user_id}")
-def summary(user_id: str):
+def summary(user_id: str, auth_user_id: str = Depends(get_current_user_id)):
+    assert_same_user(auth_user_id, user_id)
     res = supabase.table("llm_usage").select("*").eq("user_id", user_id).execute()
     rows = res.data or []
 

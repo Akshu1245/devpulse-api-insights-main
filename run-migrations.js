@@ -12,6 +12,10 @@ import path from "path";
 import https from "https";
 import { URL } from "url";
 
+const log = (...args) => {
+  process.stdout.write(args.join(' ') + '\n');
+};
+
 // Load environment
 const env = {};
 if (fs.existsSync(".env.local")) {
@@ -93,7 +97,7 @@ const executeSql = async (sql) => {
       res.on("end", () => {
         // Fallback method - this is a workaround
         // In production, use CLI or dashboard
-        console.log(
+        log(
           "Note: GraphQL endpoint used. For SQL execution, use Supabase CLI or dashboard."
         );
         resolve(true);
@@ -108,8 +112,8 @@ const executeSql = async (sql) => {
 
 // Main migration runner
 const main = async () => {
-  console.log("\n📊 Database Migration Runner\n");
-  console.log("====================================\n");
+  log("\n📊 Database Migration Runner\n");
+  log("====================================\n");
 
   const migrationsDir = path.join(process.cwd(), "supabase", "migrations");
 
@@ -123,43 +127,43 @@ const main = async () => {
     .filter((f) => f.endsWith(".sql"))
     .sort();
 
-  console.log(`Found ${migrations.length} migrations:\n`);
+  log(`Found ${migrations.length} migrations:\n`);
 
   migrations.forEach((m, idx) => {
-    console.log(`${idx + 1}. ${m}`);
+    log(`${idx + 1}. ${m}`);
   });
 
-  console.log("\n====================================\n");
+  log("\n====================================\n");
 
-  console.log("⚠️  IMPORTANT: Cannot auto-execute SQL via REST API\n");
+  log("⚠️  IMPORTANT: Cannot auto-execute SQL via REST API\n");
 
-  console.log("To run migrations, do ONE of the following:\n");
+  log("To run migrations, do ONE of the following:\n");
 
-  console.log("OPTION 1: Supabase Dashboard (Easiest)\n");
-  console.log("  1. Go to: https://app.supabase.com");
-  console.log(
+  log("OPTION 1: Supabase Dashboard (Easiest)\n");
+  log("  1. Go to: https://app.supabase.com");
+  log(
     "  2. Select your project: sbtoqosnmpstkyumukzs"
   );
-  console.log("  3. Click: SQL Editor > Create new query");
-  console.log("  4. For each migration (in order):");
-  console.log(
+  log("  3. Click: SQL Editor > Create new query");
+  log("  4. For each migration (in order):");
+  log(
     "     - Copy migrations/[filename].sql"
   );
-  console.log("     - Paste into SQL Editor");
-  console.log("     - Click Run");
-  console.log("  5. Done!\n");
+  log("     - Paste into SQL Editor");
+  log("     - Click Run");
+  log("  5. Done!\n");
 
-  console.log("OPTION 2: Command Line (Via Supabase CLI)\n");
-  console.log("  1. Install Supabase CLI globally");
-  console.log("  2. Run: supabase db push");
-  console.log("  3. Done!\n");
+  log("OPTION 2: Command Line (Via Supabase CLI)\n");
+  log("  1. Install Supabase CLI globally");
+  log("  2. Run: supabase db push");
+  log("  3. Done!\n");
 
-  console.log("OPTION 3: Copy/Paste All at Once\n");
-  console.log("  Below is the complete SQL (copy all):\n");
+  log("OPTION 3: Copy/Paste All at Once\n");
+  log("  Below is the complete SQL (copy all):\n");
 
-  console.log("====================================");
-  console.log("BEGIN MASTER MIGRATION SCRIPT");
-  console.log("====================================\n");
+  log("====================================");
+  log("BEGIN MASTER MIGRATION SCRIPT");
+  log("====================================\n");
 
   let combinedSql = "-- Combined Migrations\n-- Run in Supabase SQL Editor\n\n";
 
@@ -172,29 +176,29 @@ const main = async () => {
     combinedSql += content + "\n\n";
   }
 
-  console.log(combinedSql);
+  log(combinedSql);
 
-  console.log("====================================");
-  console.log("END MASTER MIGRATION SCRIPT");
-  console.log("====================================\n");
+  log("====================================");
+  log("END MASTER MIGRATION SCRIPT");
+  log("====================================\n");
 
-  console.log(
+  log(
     "✅ Migration script ready. Copy/paste above SQL into Supabase SQL Editor.\n"
   );
 
   // Save to file for easy copying
   const outputFile = "COMBINED_MIGRATIONS.sql";
   fs.writeFileSync(outputFile, combinedSql);
-  console.log(`📄 Also saved to: ${outputFile}\n`);
+  log(`📄 Also saved to: ${outputFile}\n`);
 
-  console.log("🎯 Next Steps:");
-  console.log(
+  log("🎯 Next Steps:");
+  log(
     "  1. Go to Supabase Dashboard > SQL Editor"
   );
-  console.log("  2. Open: COMBINED_MIGRATIONS.sql");
-  console.log("  3. Copy all content");
-  console.log("  4. Paste into SQL Editor in Supabase");
-  console.log("  5. Click 'Run'\n");
+  log("  2. Open: COMBINED_MIGRATIONS.sql");
+  log("  3. Copy all content");
+  log("  4. Paste into SQL Editor in Supabase");
+  log("  5. Click 'Run'\n");
 };
 
 main().catch((err) => {

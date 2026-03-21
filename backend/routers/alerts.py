@@ -1,15 +1,17 @@
 from __future__ import annotations
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 
+from services.auth_guard import assert_same_user, get_current_user_id
 from services.supabase_client import supabase
 
 router = APIRouter(tags=["alerts"])
 
 
 @router.get("/alerts/{user_id}")
-def list_alerts(user_id: str):
+def list_alerts(user_id: str, auth_user_id: str = Depends(get_current_user_id)):
+    assert_same_user(auth_user_id, user_id)
     res = (
         supabase.table("security_alerts")
         .select("*")
@@ -26,7 +28,12 @@ class ResolveAlertRequest(BaseModel):
 
 
 @router.patch("/alerts/{alert_id}/resolve")
-def resolve_alert(alert_id: str, req: ResolveAlertRequest):
+def resolve_alert(
+    alert_id: str,
+    req: ResolveAlertRequest,
+    auth_user_id: str = Depends(get_current_user_id),
+):
+    assert_same_user(auth_user_id, req.user_id)
     existing = (
         supabase.table("security_alerts")
         .select("*")

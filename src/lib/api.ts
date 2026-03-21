@@ -1,3 +1,5 @@
+import { supabase } from "@/integrations/supabase/client";
+
 function getBaseUrl(): string {
   const raw = import.meta.env.VITE_API_BASE_URL;
   if (!raw || typeof raw !== "string") {
@@ -24,53 +26,68 @@ async function parseJson<T>(res: Response): Promise<T> {
   return body as T;
 }
 
+async function authHeaders(extra?: HeadersInit): Promise<HeadersInit> {
+  const headers = new Headers(extra || {});
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+  const token = session?.access_token;
+  if (token) {
+    headers.set("Authorization", `Bearer ${token}`);
+  }
+  return headers;
+}
+
+async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
+  const headers = await authHeaders(init?.headers);
+  const res = await fetch(`${getBaseUrl()}${path}`, {
+    ...init,
+    headers,
+  });
+  return parseJson<T>(res);
+}
+
 export const api = {
   scanEndpoint: (endpoint: string, userId: string) =>
-    fetch(`${getBaseUrl()}/scan`, {
+    apiFetch<{ issues: Array<Record<string, string>>; endpoint: string }>("/scan", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ endpoint, user_id: userId }),
-    }).then((r) => parseJson<{ issues: Array<Record<string, string>>; endpoint: string }>(r)),
+    }),
 
   getUserScans: (userId: string) =>
-    fetch(`${getBaseUrl()}/scans/${encodeURIComponent(userId)}`).then((r) =>
-      parseJson<{ scans: Array<Record<string, unknown>> }>(r)
-    ),
+    apiFetch<{ scans: Array<Record<string, unknown>> }>(`/scans/${encodeURIComponent(userId)}`),
 
   getLLMUsage: (userId: string) =>
-    fetch(`${getBaseUrl()}/llm/usage/${encodeURIComponent(userId)}`).then((r) => parseJson(r)),
+    apiFetch(`/llm/usage/${encodeURIComponent(userId)}`),
 
   getLLMSummary: (userId: string) =>
-    fetch(`${getBaseUrl()}/llm/summary/${encodeURIComponent(userId)}`).then((r) => parseJson(r)),
+    apiFetch(`/llm/summary/${encodeURIComponent(userId)}`),
 
   logLLMUsage: (data: { user_id: string; model: string; tokens_used: number; cost_inr: number }) =>
-    fetch(`${getBaseUrl()}/llm/log`, {
+    apiFetch("/llm/log", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),
-    }).then((r) => parseJson(r)),
+    }),
 
   getAlerts: (userId: string) =>
-    fetch(`${getBaseUrl()}/alerts/${encodeURIComponent(userId)}`).then((r) =>
-      parseJson<{ alerts: Array<Record<string, unknown>> }>(r)
-    ),
+    apiFetch<{ alerts: Array<Record<string, unknown>> }>(`/alerts/${encodeURIComponent(userId)}`),
 
   resolveAlert: (alertId: string, userId: string) =>
-    fetch(`${getBaseUrl()}/alerts/${encodeURIComponent(alertId)}/resolve`, {
+    apiFetch(`/alerts/${encodeURIComponent(alertId)}/resolve`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ user_id: userId }),
-    }).then((r) => parseJson(r)),
+    }),
 
   getCompliance: (userId: string) =>
-    fetch(`${getBaseUrl()}/compliance/${encodeURIComponent(userId)}`).then((r) =>
-      parseJson<{ checks: Array<Record<string, unknown>> }>(r)
-    ),
+    apiFetch<{ checks: Array<Record<string, unknown>> }>(`/compliance/${encodeURIComponent(userId)}`),
 
   runComplianceCheck: (body: { user_id: string; control_name: string; evidence: string }) =>
-    fetch(`${getBaseUrl()}/compliance/check`, {
+    apiFetch("/compliance/check", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),
-    }).then((r) => parseJson(r)),
+    }),
 };

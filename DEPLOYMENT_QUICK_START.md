@@ -12,7 +12,7 @@
 
 ---
 
-## TODO: Configure Your Supabase Credentials
+## Configure Your Supabase Credentials
 
 ### 1. Update `.env.local` with your Supabase credentials:
 
@@ -41,7 +41,7 @@ KEY_ENCRYPTION_SECRET=✅ READY (already generated)
 
 ---
 
-## TODO: Deploy Edge Functions & Database
+## Deploy Edge Functions & Database
 
 ### Choose your deployment method:
 

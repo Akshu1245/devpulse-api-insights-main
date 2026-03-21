@@ -12,6 +12,10 @@ import https from "https";
 import { URL } from "url";
 import fs from "fs";
 
+const log = (...args) => {
+  process.stdout.write(args.join(' ') + '\n');
+};
+
 const results = [];
 
 // Load environment
@@ -84,7 +88,7 @@ const test = async (name, fn) => {
     await fn();
     const duration = Date.now() - start;
     results.push({ name, passed: true, duration_ms: duration });
-    console.log(`  ✅ ${name} (${duration}ms)`);
+    log(`  ✅ ${name} (${duration}ms)`);
   } catch (error) {
     const duration = Date.now() - start;
     results.push({
@@ -93,17 +97,17 @@ const test = async (name, fn) => {
       duration_ms: duration,
       error: error.message,
     });
-    console.log(
+    log(
       `  ❌ ${name} (${duration}ms): ${error.message}`
     );
   }
 };
 
 const main = async () => {
-  console.log("\n🔍 Post-Deployment Verification\n");
+  log("\n🔍 Post-Deployment Verification\n");
 
-  console.log("Step 1: Database Connectivity");
-  console.log("────────────────────────────\n");
+  log("Step 1: Database Connectivity");
+  log("────────────────────────────\n");
 
   await test("Database connection", async () => {
     const res = await fetchSupabase("/rest/v1/profiles", {
@@ -135,8 +139,8 @@ const main = async () => {
     if (res.status >= 400) throw new Error(`HTTP ${res.status}`);
   });
 
-  console.log("\nStep 2: Edge Function Deployment");
-  console.log("────────────────────────────────\n");
+  log("\nStep 2: Edge Function Deployment");
+  log("────────────────────────────────\n");
 
   const functions = [
     "user-api-keys",
@@ -164,8 +168,8 @@ const main = async () => {
     });
   }
 
-  console.log("\nStep 3: Security Verification");
-  console.log("──────────────────────────────\n");
+  log("\nStep 3: Security Verification");
+  log("──────────────────────────────\n");
 
   await test("Authentication enforced", async () => {
     const res = await fetchSupabase("/rest/v1/profiles", {
@@ -185,8 +189,8 @@ const main = async () => {
     }
   });
 
-  console.log("\nStep 4: Health Check");
-  console.log("───────────────────\n");
+  log("\nStep 4: Health Check");
+  log("───────────────────\n");
 
   await test("Health check endpoint", async () => {
     const res = await fetchSupabase("/functions/v1/health-check", {
@@ -196,29 +200,29 @@ const main = async () => {
     if (!res.data.status) throw new Error("No status in response");
   });
 
-  console.log("\n" + "=".repeat(50));
-  console.log("Summary");
-  console.log("=".repeat(50) + "\n");
+  log("\n" + "=".repeat(50));
+  log("Summary");
+  log("=".repeat(50) + "\n");
 
   const passed = results.filter((r) => r.passed).length;
   const total = results.length;
   const elapsed = results.reduce((sum, r) => sum + r.duration_ms, 0);
 
-  console.log(`Tests Passed: ${passed}/${total}`);
-  console.log(`Total Time: ${elapsed}ms\n`);
+  log(`Tests Passed: ${passed}/${total}`);
+  log(`Total Time: ${elapsed}ms\n`);
 
   if (passed === total) {
-    console.log("✅ All tests passed! Deployment verified.\n");
+    log("✅ All tests passed! Deployment verified.\n");
     process.exit(0);
   } else {
-    console.log("❌ Some tests failed. Review above.\n");
-    console.log("Failed tests:");
+    log("❌ Some tests failed. Review above.\n");
+    log("Failed tests:");
     results
       .filter((r) => !r.passed)
       .forEach((r) => {
-        console.log(`  - ${r.name}: ${r.error}`);
+        log(`  - ${r.name}: ${r.error}`);
       });
-    console.log();
+    log();
     process.exit(1);
   }
 };

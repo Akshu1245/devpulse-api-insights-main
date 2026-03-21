@@ -1,8 +1,9 @@
 from __future__ import annotations
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 
+from services.auth_guard import assert_same_user, get_current_user_id
 from services.supabase_client import supabase
 
 router = APIRouter(tags=["compliance"])
@@ -59,7 +60,8 @@ def _evaluate_control(control_name: str, evidence: str) -> tuple[str, str]:
 
 
 @router.get("/compliance/{user_id}")
-def get_compliance(user_id: str):
+def get_compliance(user_id: str, auth_user_id: str = Depends(get_current_user_id)):
+    assert_same_user(auth_user_id, user_id)
     res = supabase.table("compliance_checks").select("*").eq("user_id", user_id).execute()
     rows = res.data or []
     if not rows:
@@ -85,7 +87,8 @@ class CheckRequest(BaseModel):
 
 
 @router.post("/compliance/check")
-def run_check(req: CheckRequest):
+def run_check(req: CheckRequest, auth_user_id: str = Depends(get_current_user_id)):
+    assert_same_user(auth_user_id, req.user_id)
     q = (
         supabase.table("compliance_checks")
         .select("*")

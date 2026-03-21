@@ -1,8 +1,9 @@
 from __future__ import annotations
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 
+from services.auth_guard import assert_same_user, get_current_user_id
 from services.scanner import run_security_probe
 from services.supabase_client import supabase
 
@@ -15,7 +16,8 @@ class ScanRequest(BaseModel):
 
 
 @router.post("/scan")
-async def scan(req: ScanRequest):
+async def scan(req: ScanRequest, auth_user_id: str = Depends(get_current_user_id)):
+    assert_same_user(auth_user_id, req.user_id)
     try:
         issues = await run_security_probe(req.endpoint)
     except ValueError as e:
@@ -53,7 +55,8 @@ async def scan(req: ScanRequest):
 
 
 @router.get("/scans/{user_id}")
-def list_scans(user_id: str):
+def list_scans(user_id: str, auth_user_id: str = Depends(get_current_user_id)):
+    assert_same_user(auth_user_id, user_id)
     res = (
         supabase.table("api_scans")
         .select("*")
