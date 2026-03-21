@@ -311,7 +311,14 @@ export default function HealthDashboard() {
   const runProbe = useCallback(async () => {
     const { isProbing: currentlyProbing } = useHealthStore.getState();
     if (currentlyProbing) return;
-    
+
+    if (activeApis.length === 0) {
+      setMetrics([]);
+      setProbeCount(0);
+      setIsProbing(false);
+      return;
+    }
+
     setIsProbing(true);
     try {
       const keyMap = await getUserKeyMap();
@@ -386,15 +393,12 @@ export default function HealthDashboard() {
           }
         } catch { /* skip */ }
       });
-      await Promise.race([
-        Promise.allSettled(previewPromises),
-        new Promise(resolve => setTimeout(resolve, 2000))
-      ]);
+      await Promise.allSettled(previewPromises);
       if (Object.keys(previews).length > 0) {
         setResponseData(prev => ({ ...prev, ...previews }));
       }
-    } catch (err) {
-      console.error("Probe error:", err);
+    } catch {
+      /* probe failed */
     } finally {
       setIsProbing(false);
     }
@@ -570,7 +574,7 @@ export default function HealthDashboard() {
             </div>
           </div>
           <p className="text-muted-foreground text-lg max-w-2xl font-light">
-            Live health probing across {activeApis.length} APIs. All data is real, probed every 30 seconds from your browser.
+            Live health probing across {activeApis.length} API{activeApis.length === 1 ? "" : "s"} from your registry. Open Manage APIs to add GET endpoints. Probed every 30 seconds from your browser.
             {probeCount > 0 && (
               <span className="text-primary/70 font-mono text-sm ml-2">({probeCount} probes)</span>
             )}
@@ -753,7 +757,21 @@ export default function HealthDashboard() {
         </div>
 
         {/* API Grid */}
-        {!hasData ? (
+        {activeApis.length === 0 ? (
+          <div className="glass-card rounded-2xl p-10 sm:p-14 text-center border border-border max-w-xl mx-auto">
+            <p className="text-foreground font-medium mb-2">No APIs to probe</p>
+            <p className="text-sm text-muted-foreground mb-6">
+              Add at least one endpoint in Manage APIs (custom URLs). The built-in catalog is empty so you only monitor APIs you define.
+            </p>
+            <button
+              type="button"
+              onClick={() => setShowRegistryManager(true)}
+              className="px-6 py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-medium"
+            >
+              Manage APIs
+            </button>
+          </div>
+        ) : !hasData ? (
           <DashboardSkeleton />
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">

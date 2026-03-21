@@ -2,17 +2,12 @@
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from './types';
 
-const DEFAULT_SUPABASE_URL = 'https://sbtoqosnmpstkyumukzs.supabase.co';
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL ?? '';
 const SUPABASE_PUBLISHABLE_KEY =
   import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY ||
-  import.meta.env.VITE_SUPABASE_ANON_KEY;
-const RESOLVED_SUPABASE_URL = SUPABASE_URL || DEFAULT_SUPABASE_URL;
-
-// Validate environment variables
-if (!SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY) {
-  console.error('Missing Supabase environment variables!');
-}
+  import.meta.env.VITE_SUPABASE_ANON_KEY ||
+  '';
+const RESOLVED_SUPABASE_URL = SUPABASE_URL;
 
 // Import the supabase client like this:
 // import { supabase } from "@/integrations/supabase/client";
@@ -30,7 +25,7 @@ const fetchWithTimeout = (input: RequestInfo | URL, init?: RequestInit): Promise
 
 export const supabase = createClient<Database>(
   RESOLVED_SUPABASE_URL,
-  SUPABASE_PUBLISHABLE_KEY || 'placeholder',
+  SUPABASE_PUBLISHABLE_KEY,
   {
     auth: {
       storage: localStorage,

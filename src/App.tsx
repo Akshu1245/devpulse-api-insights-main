@@ -26,6 +26,7 @@ const AgentGuardSDKDocs = lazy(() => import("./pages/AgentGuardSDKDocs"));
 const AgentGuardResetPassword = lazy(() => import("./pages/AgentGuardResetPassword"));
 const AgentGuardAgentDetail = lazy(() => import("./pages/AgentGuardAgentDetail"));
 const AgentGuardSettings = lazy(() => import("./pages/AgentGuardSettings"));
+const DevPulseSecurityDashboard = lazy(() => import("./pages/DevPulseSecurityDashboard"));
 
 const PageLoader = () => (
   <div className="min-h-screen bg-background flex items-center justify-center">
@@ -59,6 +60,7 @@ const App = () => {
               <Route path="/api-monitoring-alternatives" element={<ApiMonitoringAlternatives />} />
                 <Route path="/agentguard" element={<AgentGuardGate />} />
                 <Route path="/agentguard/landing" element={<AgentGuardGate />} />
+                <Route path="/devpulse/security" element={<DevPulseSecurityDashboard />} />
                 <Route path="/auth" element={<Auth />} />
                 <Route path="/auth/reset-password" element={<AgentGuardResetPassword />} />
                 {/* Backward-compatible route (single auth UI lives at /auth) */}

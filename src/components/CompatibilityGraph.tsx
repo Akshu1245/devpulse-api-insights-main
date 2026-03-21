@@ -3,7 +3,6 @@
 import { useState, useMemo } from "react";
 import { motion } from "framer-motion";
 import { GitBranch, ArrowRight, Zap } from "lucide-react";
-import { APIs } from "@/data/apiData";
 import { useHealthStore } from "@/hooks/useHealthStore";
 
 /**
@@ -40,11 +39,6 @@ type LiveEdge = {
 export default function CompatibilityGraph() {
   const [selectedApi, setSelectedApi] = useState<string | null>(null);
   const { metrics } = useHealthStore();
-  const statusByApiId = useMemo(() => {
-    const map: Record<string, string> = {};
-    metrics.forEach(m => { map[m.apiId] = m.status; });
-    return map;
-  }, [metrics]);
 
   const metricsByApiId = useMemo(() => {
     const map: Record<string, { status: string; latencyMs: number }> = {};
@@ -55,19 +49,21 @@ export default function CompatibilityGraph() {
   }, [metrics]);
 
   const connections = useMemo<LiveEdge[]>(() => {
-    const activeApis = APIs.filter((api) => metricsByApiId[api.id]);
-    if (activeApis.length < 2) return [];
+    const activeIds = metrics.map((m) => m.apiId);
+    if (activeIds.length < 2) return [];
 
     const edges: LiveEdge[] = [];
-    for (let i = 0; i < activeApis.length; i++) {
-      for (let j = i + 1; j < activeApis.length; j++) {
-        const source = activeApis[i];
-        const target = activeApis[j];
-        if (selectedApi && source.id !== selectedApi && target.id !== selectedApi) continue;
+    for (let i = 0; i < activeIds.length; i++) {
+      for (let j = i + 1; j < activeIds.length; j++) {
+        const sid = activeIds[i];
+        const tid = activeIds[j];
+        if (selectedApi && sid !== selectedApi && tid !== selectedApi) continue;
 
-        const sourceMetric = metricsByApiId[source.id];
-        const targetMetric = metricsByApiId[target.id];
-        const categoryBonus = source.category === target.category ? 12 : 4;
+        const sourceMetric = metricsByApiId[sid];
+        const targetMetric = metricsByApiId[tid];
+        const sourceName = metrics.find((m) => m.apiId === sid)?.apiName ?? sid;
+        const targetName = metrics.find((m) => m.apiId === tid)?.apiName ?? tid;
+        const categoryBonus = 8;
         const score = Math.max(
           0,
           Math.min(
@@ -81,16 +77,13 @@ export default function CompatibilityGraph() {
           )
         );
 
-        const reason =
-          source.category === target.category
-            ? `Both APIs are in ${source.category}; compatibility is based on live uptime + latency.`
-            : `Cross-category pairing (${source.category} + ${target.category}) scored by live uptime + latency.`;
+        const reason = `Pairing ${sourceName} + ${targetName} scored from live uptime and latency.`;
 
         edges.push({
-          source: source.id,
-          target: target.id,
-          sourceName: source.name,
-          targetName: target.name,
+          source: sid,
+          target: tid,
+          sourceName,
+          targetName,
           reason,
           liveScore: score,
         });
@@ -98,7 +91,7 @@ export default function CompatibilityGraph() {
     }
 
     return edges.sort((a, b) => b.liveScore - a.liveScore).slice(0, 12);
-  }, [selectedApi, metricsByApiId]);
+  }, [selectedApi, metricsByApiId, metrics]);
 
   const scoreColor = (score: number) => {
     if (score >= 80) return "text-status-healthy";
@@ -157,17 +150,17 @@ export default function CompatibilityGraph() {
           >
             All Connections
           </button>
-          {APIs.map(api => (
+          {metrics.map((m) => (
             <button
-              key={api.id}
-              onClick={() => setSelectedApi(api.id === selectedApi ? null : api.id)}
+              key={m.apiId}
+              onClick={() => setSelectedApi(m.apiId === selectedApi ? null : m.apiId)}
               className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${
-                selectedApi === api.id
+                selectedApi === m.apiId
                   ? "bg-secondary/15 text-secondary border border-secondary/25"
                   : "glass-card text-muted-foreground hover:text-foreground"
               }`}
             >
-              {api.name}
+              {m.apiName}
             </button>
           ))}
         </div>

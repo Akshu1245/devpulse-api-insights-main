@@ -461,6 +461,123 @@ export type Database = {
         }
         Relationships: []
       }
+      api_scans: {
+        Row: {
+          endpoint: string
+          id: string
+          issue: string
+          method: string
+          recommendation: string
+          risk_level: string
+          scanned_at: string
+          user_id: string
+        }
+        Insert: {
+          endpoint: string
+          id?: string
+          issue: string
+          method: string
+          recommendation: string
+          risk_level: string
+          scanned_at?: string
+          user_id: string
+        }
+        Update: {
+          endpoint?: string
+          id?: string
+          issue?: string
+          method?: string
+          recommendation?: string
+          risk_level?: string
+          scanned_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      compliance_checks: {
+        Row: {
+          checked_at: string
+          control_name: string
+          evidence: string
+          id: string
+          status: string
+          user_id: string
+        }
+        Insert: {
+          checked_at?: string
+          control_name: string
+          evidence?: string
+          id?: string
+          status: string
+          user_id: string
+        }
+        Update: {
+          checked_at?: string
+          control_name?: string
+          evidence?: string
+          id?: string
+          status?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      llm_usage: {
+        Row: {
+          cost_inr: number
+          id: string
+          model: string
+          recorded_at: string
+          tokens_used: number
+          user_id: string
+        }
+        Insert: {
+          cost_inr?: number
+          id?: string
+          model: string
+          recorded_at?: string
+          tokens_used?: number
+          user_id: string
+        }
+        Update: {
+          cost_inr?: number
+          id?: string
+          model?: string
+          recorded_at?: string
+          tokens_used?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
+      security_alerts: {
+        Row: {
+          created_at: string
+          description: string
+          endpoint: string
+          id: string
+          resolved: boolean
+          severity: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          description: string
+          endpoint: string
+          id?: string
+          resolved?: boolean
+          severity: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          endpoint?: string
+          id?: string
+          resolved?: boolean
+          severity?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

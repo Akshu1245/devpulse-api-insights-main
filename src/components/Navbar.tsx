@@ -7,6 +7,7 @@ import { Link } from "react-router-dom";
 
 const links = [
   { label: "Dashboard", href: "#dashboard" },
+  { label: "API Security", href: "/devpulse/security", route: true as const },
   { label: "Compatibility", href: "#compatibility" },
   { label: "Code Gen", href: "#codegen" },
   { label: "Doc Search", href: "#docs" },
@@ -35,7 +36,7 @@ export default function Navbar() {
 
         {/* Desktop */}
         <div className="hidden md:flex items-center gap-1">
-          {links.map(l => (
+          {links.map(l =>
             l.primary ? (
               <Link
                 key={l.href}
@@ -43,6 +44,14 @@ export default function Navbar() {
                 className="flex items-center gap-2 text-sm font-medium text-primary hover:text-primary/90 px-4 py-2 rounded-lg bg-primary/10 hover:bg-primary/15 transition-all duration-200"
               >
                 <Shield className="w-4 h-4" />
+                {l.label}
+              </Link>
+            ) : "route" in l && l.route ? (
+              <Link
+                key={l.href}
+                to={l.href}
+                className="text-sm text-muted-foreground hover:text-foreground px-4 py-2 rounded-lg hover:bg-muted/30 transition-all duration-200"
+              >
                 {l.label}
               </Link>
             ) : (
@@ -54,7 +63,7 @@ export default function Navbar() {
                 {l.label}
               </a>
             )
-          ))}
+          )}
         </div>
 
         {/* Mobile toggle */}
@@ -70,7 +79,7 @@ export default function Navbar() {
           animate={{ opacity: 1, height: "auto" }}
           className="md:hidden border-t border-border/30 px-6 pb-4"
         >
-          {links.map(l => (
+          {links.map(l =>
             l.primary ? (
               <Link
                 key={l.href}
@@ -79,6 +88,15 @@ export default function Navbar() {
                 className="flex items-center gap-2 py-3 text-sm font-medium text-primary"
               >
                 <Shield className="w-4 h-4" />
+                {l.label}
+              </Link>
+            ) : "route" in l && l.route ? (
+              <Link
+                key={l.href}
+                to={l.href}
+                onClick={() => setOpen(false)}
+                className="block py-3 text-sm text-muted-foreground hover:text-foreground transition-colors"
+              >
                 {l.label}
               </Link>
             ) : (
@@ -91,7 +109,7 @@ export default function Navbar() {
                 {l.label}
               </a>
             )
-          ))}
+          )}
         </motion.div>
       )}
     </motion.nav>
