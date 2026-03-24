@@ -44,6 +44,11 @@
           "id": "devpulse.sidebarView",
           "name": "Workspace Insights",
           "type": "webview"
+        },
+        {
+          "id": "devpulseApiInventory",
+          "name": "API Inventory",
+          "icon": "$(list-unordered)"
         }
       ]
     },
@@ -71,6 +76,46 @@
       {
         "command": "devpulse.refresh",
         "title": "DevPulse: Refresh"
+      },
+      {
+        "command": "devpulse.scanFile",
+        "title": "DevPulse: Scan Current File for API Risks"
+      },
+      {
+        "command": "devpulse.scanProject",
+        "title": "DevPulse: Scan Project for Shadow APIs"
+      },
+      {
+        "command": "devpulse.showDashboard",
+        "title": "DevPulse: Show Security Dashboard"
+      },
+      {
+        "command": "devpulse.showCompliance",
+        "title": "DevPulse: Show Compliance Status"
+      },
+      {
+        "command": "devpulse.authenticateBackend",
+        "title": "DevPulse: Connect to Backend"
+      },
+      {
+        "command": "devpulse.showStatus",
+        "title": "DevPulse: Show Connection Status"
+      },
+      {
+        "command": "devpulse.exportReport",
+        "title": "DevPulse: Export Security Report"
+      },
+      {
+        "command": "devpulse.openSettings",
+        "title": "DevPulse: Settings"
+      },
+      {
+        "command": "devpulse.quickFix",
+        "title": "DevPulse: Quick Fix"
+      },
+      {
+        "command": "devpulse.refreshInventory",
+        "title": "DevPulse: Refresh API Inventory"
       }
     ],
     "configuration": {
@@ -92,6 +137,45 @@
           "minimum": 500,
           "maximum": 50000,
           "description": "Maximum number of characters sent for selected code."
+        },
+        "devpulse.apiEndpoint": {
+          "type": "string",
+          "default": "http://localhost:8000",
+          "description": "DevPulse backend API endpoint URL"
+        },
+        "devpulse.apiToken": {
+          "type": "string",
+          "default": "",
+          "description": "DevPulse API authentication token (keep secret!)"
+        },
+        "devpulse.autoScan": {
+          "type": "boolean",
+          "default": true,
+          "description": "Automatically scan files for API risks on open/edit"
+        },
+        "devpulse.autoScanDelay": {
+          "type": "number",
+          "default": 2000,
+          "minimum": 500,
+          "maximum": 10000,
+          "description": "Delay in milliseconds before auto-scanning edited files"
+        },
+        "devpulse.enableInlineRiskIndicators": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show inline risk indicators for API endpoints"
+        },
+        "devpulse.enableHoverDetails": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show API details on hover"
+        },
+        "devpulse.riskThreshold": {
+          "type": "number",
+          "default": 50,
+          "minimum": 0,
+          "maximum": 100,
+          "description": "Minimum risk score to show warnings (0-100)"
         }
       }
     },
@@ -101,6 +185,17 @@
         "key": "ctrl+alt+d",
         "mac": "cmd+alt+d",
         "when": "editorTextFocus"
+      },
+      {
+        "command": "devpulse.scanFile",
+        "key": "ctrl+shift+d",
+        "mac": "cmd+shift+d",
+        "when": "editorTextFocus"
+      },
+      {
+        "command": "devpulse.showDashboard",
+        "key": "ctrl+alt+shift+d",
+        "mac": "cmd+alt+shift+d"
       }
     ]
   },
@@ -111,6 +206,9 @@
     "publish:vsce": "vsce publish",
     "prepublishOnly": "npm run build",
     "lint": "eslint src --ext .ts"
+  },
+  "dependencies": {
+    "axios": "^1.6.0"
   },
   "devDependencies": {
     "@types/node": "^22.16.5",

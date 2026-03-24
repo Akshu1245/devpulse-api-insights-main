@@ -1,0 +1,176 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database with Supabase configuration
+  postgres:
+    image: postgres:16-alpine
+    container_name: devpulse-postgres
+    environment:
+      POSTGRES_DB: ${DB_NAME:-devpulse}
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
+      PGDATA: /var/lib/postgresql/data/pgdata
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./supabase/migrations:/docker-entrypoint-initdb.d:z
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-postgres}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - devpulse
+    restart: unless-stopped
+
+  # Redis for caching and job queue
+  redis:
+    image: redis:7-alpine
+    container_name: devpulse-redis
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD:-redis}
+    volumes:
+      - redis_data:/data
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - devpulse
+    restart: unless-stopped
+
+  # FastAPI Backend
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: devpulse-backend
+    environment:
+      DATABASE_URL: postgresql://${DB_USER:-postgres}:${DB_PASSWORD:-postgres}@postgres:5432/${DB_NAME:-devpulse}
+      REDIS_URL: redis://:${REDIS_PASSWORD:-redis}@redis:6379/0
+      SUPABASE_URL: ${SUPABASE_URL}
+      SUPABASE_KEY: ${SUPABASE_KEY}
+      JWT_SECRET: ${JWT_SECRET}
+      ENVIRONMENT: production
+      LOG_LEVEL: info
+      WORKERS: 4
+      TIMEOUT: 120
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./backend:/app
+      - /app/__pycache__
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - devpulse
+    restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "10"
+
+  # Development: Vite Frontend (remove in production, use nginx instead)
+  frontend:
+    image: node:20-alpine
+    container_name: devpulse-frontend
+    working_dir: /app
+    command: npm run dev
+    environment:
+      VITE_API_URL: http://backend:8000
+      NODE_ENV: production
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./src:/app/src:ro
+      - ./package.json:/app/package.json:ro
+      - ./vite.config.ts:/app/vite.config.ts:ro
+      - ./tsconfig.json:/app/tsconfig.json:ro
+      - /app/node_modules
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - devpulse
+    restart: unless-stopped
+
+  # Monitoring: Prometheus (metrics collection)
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: devpulse-prometheus
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    ports:
+      - "9090:9090"
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--storage.tsdb.retention.time=30d'
+    networks:
+      - devpulse
+    restart: unless-stopped
+
+  # Monitoring: Grafana (visualization)
+  grafana:
+    image: grafana/grafana:latest
+    container_name: devpulse-grafana
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_PASSWORD:-admin}
+      GF_INSTALL_PLUGINS: rendering
+      GF_SERVER_ROOT_URL: http://grafana:3000
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+    ports:
+      - "3000:3000"
+    depends_on:
+      - prometheus
+    networks:
+      - devpulse
+    restart: unless-stopped
+
+  # Error Tracking: Sentry (optional)
+  sentry:
+    image: sentry:latest
+    container_name: devpulse-sentry
+    environment:
+      SENTRY_SECRET_KEY: ${SENTRY_SECRET_KEY:-generate-me-an-openssl-random-secret-key}
+      SENTRY_POSTGRES_HOST: postgres
+      SENTRY_POSTGRES_PORT: 5432
+      SENTRY_DB_NAME: sentry
+      SENTRY_DB_USER: ${DB_USER:-postgres}
+      SENTRY_DB_PASSWORD: ${DB_PASSWORD:-postgres}
+      SENTRY_REDIS_HOST: redis
+      SENTRY_REDIS_PASSWORD: ${REDIS_PASSWORD:-redis}
+    ports:
+      - "9000:9000"
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - devpulse
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  redis_data:
+  prometheus_data:
+  grafana_data:
+
+networks:
+  devpulse:
+    driver: bridge

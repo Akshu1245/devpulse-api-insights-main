@@ -1,0 +1,173 @@
+{
+  "info": {
+    "name": "DevPulse Sample API Inventory",
+    "description": "Sample Postman collection for API security scanning",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "User Management",
+      "description": "User-related endpoints",
+      "item": [
+        {
+          "name": "Get Users",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer token",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "https://api.example.com/users",
+              "protocol": "https",
+              "host": ["api", "example", "com"],
+              "path": ["users"]
+            }
+          },
+          "description": "Fetch all users"
+        },
+        {
+          "name": "Create User",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"name\": \"John\", \"email\": \"john@example.com\"}"
+            },
+            "url": {
+              "raw": "https://api.example.com/users",
+              "protocol": "https",
+              "host": ["api", "example", "com"],
+              "path": ["users"]
+            }
+          },
+          "description": "Create a new user"
+        },
+        {
+          "name": "Get User by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer token",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "https://api.example.com/users/{{userId}}",
+              "protocol": "https",
+              "host": ["api", "example", "com"],
+              "path": ["users", "{{userId}}"]
+            }
+          },
+          "description": "Get specific user by ID"
+        }
+      ]
+    },
+    {
+      "name": "Authentication",
+      "description": "Auth endpoints",
+      "item": [
+        {
+          "name": "Login",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"username\": \"user\", \"password\": \"pass\"}"
+            },
+            "url": {
+              "raw": "https://api.example.com/auth/login",
+              "protocol": "https",
+              "host": ["api", "example", "com"],
+              "path": ["auth", "login"]
+            }
+          },
+          "description": "User login endpoint"
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer token",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "https://api.example.com/auth/logout",
+              "protocol": "https",
+              "host": ["api", "example", "com"],
+              "path": ["auth", "logout"]
+            }
+          },
+          "description": "User logout endpoint"
+        }
+      ]
+    },
+    {
+      "name": "Products",
+      "description": "Product catalog endpoints",
+      "item": [
+        {
+          "name": "List Products",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "https://api.example.com/products?limit=50",
+              "protocol": "https",
+              "host": ["api", "example", "com"],
+              "path": ["products"],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "50"
+                }
+              ]
+            }
+          },
+          "description": "Get all products with pagination"
+        }
+      ]
+    },
+    {
+      "name": "Insecure Endpoints (For Testing)",
+      "description": "These endpoints demonstrate security issues for testing",
+      "item": [
+        {
+          "name": "HTTP (Not HTTPS)",
+          "request": {
+            "method": "GET",
+            "url": "http://api.example.com/insecure"
+          },
+          "description": "Example endpoint without HTTPS"
+        }
+      ]
+    }
+  ]
+}

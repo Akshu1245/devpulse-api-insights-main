@@ -9,7 +9,7 @@ from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.base import BaseHTTPMiddleware
 
-from routers import alerts, compliance, llm, scan
+from routers import alerts, compliance, llm, scan, postman, risk, endpoints, ci_cd, cost_alerts, thinking, shadow_api
 
 load_dotenv()
 
@@ -96,6 +96,13 @@ app.include_router(scan.router)
 app.include_router(llm.router)
 app.include_router(alerts.router)
 app.include_router(compliance.router)
+app.include_router(postman.router)
+app.include_router(risk.router)
+app.include_router(endpoints.router)
+app.include_router(ci_cd.router)
+app.include_router(cost_alerts.router)
+app.include_router(thinking.router)
+app.include_router(shadow_api.router)
 
 
 @app.get("/health")

@@ -1,0 +1,101 @@
+name: Publish VS Code Extension
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to publish (e.g., 1.0.0)'
+        required: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: read
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        working-directory: vscode-extension
+        run: npm ci
+
+      - name: Lint extension
+        working-directory: vscode-extension
+        run: npm run lint
+
+      - name: Run tests
+        working-directory: vscode-extension
+        run: npm test
+
+      - name: Build extension
+        working-directory: vscode-extension
+        run: npm run build
+
+      - name: Package extension (VSIX)
+        working-directory: vscode-extension
+        run: |
+          npm install -g @vscode/vsce
+          vsce package -o ../devpulse-ide.vsix
+
+      - name: Publish to VS Code Marketplace
+        working-directory: vscode-extension
+        env:
+          VSCE_PAT: ${{ secrets.VSCE_PAT }}
+        run: |
+          vsce publish --pat ${{ secrets.VSCE_PAT }}
+
+      - name: Publish to Open VSX Registry
+        working-directory: vscode-extension
+        env:
+          OVSX_PAT: ${{ secrets.OVSX_PAT }}
+        run: |
+          npm install -g ovsx
+          ovsx publish -p ${{ secrets.OVSX_PAT }} || true
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: devpulse-ide.vsix
+          draft: false
+          prerelease: false
+          body: |
+            VS Code Extension v${{ github.ref_name }}
+            
+            **Changes:**
+            - Run `git log $(git describe --tags --abbrev=0)..HEAD --oneline` to see changes
+            
+            **Installation:**
+            - Install from VS Code Marketplace: Microsoft VS Code IDE Extension
+            - Or install VSIX directly: `code --install-extension devpulse-ide.vsix`
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Notify release
+        if: success()
+        uses: 8398a7/action-slack@v3
+        with:
+          status: success
+          text: |
+            🎉 VS Code Extension Published: v${{ github.ref_name }}
+            Marketplace: https://marketplace.visualstudio.com/items?itemName=DevPulse.devpulse-ide
+          webhook_url: ${{ secrets.SLACK_WEBHOOK }}
+
+      - name: Notify failure
+        if: failure()
+        uses: 8398a7/action-slack@v3
+        with:
+          status: failure
+          text: |
+            ❌ Extension publishing failed: v${{ github.ref_name }}
+            Check: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          webhook_url: ${{ secrets.SLACK_WEBHOOK }}

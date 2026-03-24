@@ -1,10 +1,14 @@
 import * as vscode from "vscode";
+import * as path from "path";
+import * as fs from "fs";
 
 type DevPulseWebviewPayload =
   | { type: "devpulse:hostReady"; payload: { workspaceName?: string } }
   | { type: "devpulse:editorContext"; payload: EditorContext }
   | { type: "devpulse:analyzeSelection"; payload: EditorContext }
-  | { type: "devpulse:theme"; payload: { kind: vscode.ColorThemeKind } };
+  | { type: "devpulse:theme"; payload: { kind: vscode.ColorThemeKind } }
+  | { type: "devpulse:apiStatus"; payload: { connected: boolean; endpoint: string } }
+  | { type: "devpulse:scanResults"; payload: ScanResult[] };
 
 interface EditorContext {
   filePath?: string;
@@ -20,6 +24,14 @@ interface EditorContext {
 interface DevPulseWebviewTarget {
   reveal(): void;
   postMessage(payload: DevPulseWebviewPayload): Thenable<boolean>;
+}
+
+interface ScanResult {
+  file: string;
+  line: number;
+  endpoint: string;
+  riskLevel: string;
+  message: string;
 }
 
 class DevPulseViewProvider implements vscode.WebviewViewProvider, DevPulseWebviewTarget {
