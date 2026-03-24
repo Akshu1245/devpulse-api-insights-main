@@ -10,9 +10,10 @@ from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.base import BaseHTTPMiddleware
 from pydantic import BaseModel, EmailStr
 
-from routers import alerts, compliance, llm, scan, postman, risk, endpoints, ci_cd, cost_alerts, thinking, shadow_api
+from routers import alerts, compliance, llm, scan, postman, risk, endpoints, ci_cd, cost_alerts, thinking, shadow_api, agentguard
 from services.auth_guard import get_current_user_id
 from services.supabase_client import supabase
+from typing import Optional
 
 load_dotenv()
 
@@ -107,6 +108,7 @@ app.include_router(ci_cd.router)
 app.include_router(cost_alerts.router)
 app.include_router(thinking.router)
 app.include_router(shadow_api.router)
+app.include_router(agentguard.router)
 
 
 # Authentication Endpoints
@@ -261,9 +263,6 @@ async def request_password_reset(email: str):
         }
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Password reset failed: {str(e)}")
-
-
-from typing import Optional
 
 
 @app.get("/health")
