@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630" role="img" aria-label="DevPulse API Intelligence">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0b1220" />
+      <stop offset="100%" stop-color="#1d3b59" />
+    </linearGradient>
+    <linearGradient id="accent" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#18c5c2" />
+      <stop offset="100%" stop-color="#7be9ff" />
+    </linearGradient>
+  </defs>
+
+  <rect width="1200" height="630" fill="url(#bg)" />
+  <circle cx="980" cy="120" r="220" fill="#183450" opacity="0.45" />
+  <circle cx="190" cy="560" r="220" fill="#12324b" opacity="0.65" />
+
+  <g transform="translate(120 150)">
+    <rect x="0" y="0" rx="22" ry="22" width="96" height="96" fill="#0d273c" stroke="#2b6f96" stroke-width="3" />
+    <path d="M30 64h36l-8-20h-20z" fill="url(#accent)" />
+    <path d="M48 24v28" stroke="url(#accent)" stroke-width="8" stroke-linecap="round" />
+
+    <text x="130" y="50" fill="#f7fbff" font-size="64" font-family="Georgia, 'Times New Roman', serif" font-weight="700">DevPulse</text>
+    <text x="130" y="98" fill="#96b9d3" font-size="32" font-family="'Segoe UI', Arial, sans-serif">Real-Time API Intelligence</text>
+  </g>
+
+  <g transform="translate(120 350)">
+    <rect x="0" y="0" rx="14" ry="14" width="300" height="56" fill="#0f2538" stroke="#2e6f95" />
+    <text x="22" y="36" fill="#cde8ff" font-size="24" font-family="'Segoe UI', Arial, sans-serif">Health Monitoring</text>
+
+    <rect x="330" y="0" rx="14" ry="14" width="280" height="56" fill="#0f2538" stroke="#2e6f95" />
+    <text x="352" y="36" fill="#cde8ff" font-size="24" font-family="'Segoe UI', Arial, sans-serif">Cost Forecasting</text>
+
+    <rect x="640" y="0" rx="14" ry="14" width="320" height="56" fill="#0f2538" stroke="#2e6f95" />
+    <text x="662" y="36" fill="#cde8ff" font-size="24" font-family="'Segoe UI', Arial, sans-serif">Agent Security Guardrails</text>
+  </g>
+</svg>

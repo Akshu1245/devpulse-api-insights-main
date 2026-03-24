@@ -1,0 +1,121 @@
+{
+  "name": "devpulse-ide",
+  "displayName": "DevPulse IDE",
+  "description": "Use DevPulse directly inside VS Code with project context and code insights.",
+  "version": "0.1.0",
+  "publisher": "devpulse",
+  "license": "UNLICENSED",
+  "preview": false,
+  "keywords": [
+    "devpulse",
+    "api",
+    "insights",
+    "agent",
+    "monitoring",
+    "supabase"
+  ],
+  "galleryBanner": {
+    "color": "#111827",
+    "theme": "dark"
+  },
+  "engines": {
+    "vscode": "^1.90.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "devpulse",
+          "title": "DevPulse",
+          "icon": "media/devpulse.svg"
+        }
+      ]
+    },
+    "views": {
+      "devpulse": [
+        {
+          "id": "devpulse.sidebarView",
+          "name": "Workspace Insights",
+          "type": "webview"
+        }
+      ]
+    },
+    "commands": [
+      {
+        "command": "devpulse.openPanel",
+        "title": "DevPulse: Open Full Panel"
+      },
+      {
+        "command": "devpulse.sendEditorContext",
+        "title": "DevPulse: Send Active Editor Context"
+      },
+      {
+        "command": "devpulse.analyzeSelection",
+        "title": "DevPulse: Analyze Selected Code"
+      },
+      {
+        "command": "devpulse.copyContextAsMarkdown",
+        "title": "DevPulse: Copy Context as Markdown"
+      },
+      {
+        "command": "devpulse.openWebApp",
+        "title": "DevPulse: Open Web App"
+      },
+      {
+        "command": "devpulse.refresh",
+        "title": "DevPulse: Refresh"
+      }
+    ],
+    "configuration": {
+      "title": "DevPulse",
+      "properties": {
+        "devpulse.webAppUrl": {
+          "type": "string",
+          "default": "http://localhost:8080",
+          "description": "DevPulse web app URL shown in the extension webview."
+        },
+        "devpulse.autoSyncEditorContext": {
+          "type": "boolean",
+          "default": true,
+          "description": "Automatically send active file and selection updates to DevPulse."
+        },
+        "devpulse.maxSelectionChars": {
+          "type": "number",
+          "default": 12000,
+          "minimum": 500,
+          "maximum": 50000,
+          "description": "Maximum number of characters sent for selected code."
+        }
+      }
+    },
+    "keybindings": [
+      {
+        "command": "devpulse.analyzeSelection",
+        "key": "ctrl+alt+d",
+        "mac": "cmd+alt+d",
+        "when": "editorTextFocus"
+      }
+    ]
+  },
+  "scripts": {
+    "build": "tsc -p ./",
+    "watch": "tsc -w -p ./",
+    "package": "vsce package",
+    "publish:vsce": "vsce publish",
+    "prepublishOnly": "npm run build",
+    "lint": "eslint src --ext .ts"
+  },
+  "devDependencies": {
+    "@types/node": "^22.16.5",
+    "@types/vscode": "^1.90.0",
+    "@vscode/vsce": "^3.6.2",
+    "typescript": "^5.8.3"
+  }
+}
