@@ -10,6 +10,7 @@ import ErrorBoundary from "@/components/ErrorBoundary";
 import SeoMeta from "@/components/SeoMeta";
 import SplashScreen from "./components/SplashScreen";
 import { DevPulseIDEProvider } from "@/context/DevPulseIDEContext";
+import { AuthProvider } from "@/context/AuthContext";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
@@ -45,14 +46,15 @@ const App = () => {
 
   return (
     <DevPulseIDEProvider>
-      <ThemeProvider>
-        <QueryClientProvider client={queryClient}>
-          <TooltipProvider>
-          <ErrorBoundary>
-          <Toaster />
-          <Sonner />
-          {!splashDone && <SplashScreen onComplete={() => setSplashDone(true)} />}
-          <BrowserRouter>
+      <AuthProvider>
+        <ThemeProvider>
+          <QueryClientProvider client={queryClient}>
+            <TooltipProvider>
+            <ErrorBoundary>
+            <Toaster />
+            <Sonner />
+            {!splashDone && <SplashScreen onComplete={() => setSplashDone(true)} />}
+            <BrowserRouter>
             <SeoMeta />
             <Suspense fallback={<PageLoader />}>
               <Routes>
@@ -83,6 +85,7 @@ const App = () => {
           </TooltipProvider>
         </QueryClientProvider>
       </ThemeProvider>
+    </AuthProvider>
     </DevPulseIDEProvider>
   );
 };

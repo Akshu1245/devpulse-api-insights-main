@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { getSafeNext } from "@/lib/auth";
+import { useAuthContext } from "@/context/AuthContext";
 
 type AuthMode = "login" | "signup" | "forgot";
 
@@ -30,6 +31,7 @@ export default function Auth() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { toast } = useToast();
+  const { signIn, signUp, resetPassword } = useAuthContext();
 
   const next = getSafeNext(searchParams.get("next"), "/agentguard");
 
@@ -38,34 +40,20 @@ export default function Auth() {
     setLoading(true);
     try {
       if (mode === "forgot") {
-        const { error } = await supabase.auth.resetPasswordForEmail(email, {
-          redirectTo: `${window.location.origin}/auth/reset-password`,
-        });
-        if (error) throw error;
+        await resetPassword(email);
         toast({ title: "Check your email", description: "We sent you a password reset link." });
         setMode("login");
         return;
       }
 
       if (mode === "login") {
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
-        if (error) throw error;
+        await signIn(email, password);
         navigate(next);
         return;
       }
 
       // signup
-      const { error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          data: { display_name: displayName },
-          // After email confirmation, send the user back to the unified login
-          emailRedirectTo: `${window.location.origin}/auth`,
-        },
-      });
-
-      if (error) throw error;
+      await signUp(email, password, displayName);
       toast({ title: "Check your email", description: "We sent you a confirmation link." });
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "An error occurred";

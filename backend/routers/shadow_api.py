@@ -13,7 +13,7 @@ from fastapi import APIRouter, Depends, Query, HTTPException
 from typing import Optional, List
 from datetime import datetime
 
-from services.auth_guard import verify_token
+from services.auth_guard import get_current_user_id, assert_same_user
 from services.shadow_api_detector import (
     ShadowAPIDetector,
     ShadowAPIRiskLevel,
@@ -37,7 +37,7 @@ async def discover_shadow_apis(
     user_id: str = Query(..., description="User ID"),
     lookback_days: int = Query(30, ge=1, le=365, description="Days to analyze"),
     min_requests: int = Query(5, ge=1, description="Minimum requests threshold"),
-    token: str = Depends(verify_token)
+    auth_user_id: str = Depends(get_current_user_id)
 ) -> dict:
     """
     Scan for shadow APIs
@@ -48,6 +48,7 @@ async def discover_shadow_apis(
     Args:
         user_id: User identifier
         lookback_days: Number of days to analyze (1-365)
+        auth_user_id: Authenticated user ID from token
         min_requests: Minimum requests to consider endpoint
         token: Authentication bearer token
     
@@ -111,7 +112,7 @@ async def list_shadow_apis(
     risk_level: Optional[str] = Query(None, description="Filter by risk level"),
     limit: int = Query(50, ge=1, le=1000),
     offset: int = Query(0, ge=0),
-    token: str = Depends(verify_token)
+    auth_user_id: str = Depends(get_current_user_id)
 ) -> dict:
     """
     List discovered shadow APIs
@@ -171,7 +172,7 @@ async def list_shadow_apis(
 async def get_shadow_api_details(
     discovery_id: str,
     user_id: str = Query(..., description="User ID"),
-    token: str = Depends(verify_token)
+    auth_user_id: str = Depends(get_current_user_id)
 ) -> dict:
     """
     Get detailed information about a shadow API
@@ -212,7 +213,7 @@ async def dismiss_shadow_api(
     discovery_id: str,
     user_id: str = Query(..., description="User ID"),
     reason: str = Query(..., description="Dismissal reason"),
-    token: str = Depends(verify_token)
+    auth_user_id: str = Depends(get_current_user_id)
 ) -> dict:
     """
     Dismiss a shadow API discovery (mark as false positive)
@@ -247,7 +248,7 @@ async def dismiss_shadow_api(
 async def whitelist_shadow_api(
     discovery_id: str,
     user_id: str = Query(..., description="User ID"),
-    token: str = Depends(verify_token)
+    auth_user_id: str = Depends(get_current_user_id)
 ) -> dict:
     """
     Whitelist a shadow API as authorized/documented
@@ -279,7 +280,7 @@ async def whitelist_shadow_api(
 @router.get("/analytics")
 async def get_shadow_api_analytics(
     user_id: str = Query(..., description="User ID"),
-    token: str = Depends(verify_token)
+    auth_user_id: str = Depends(get_current_user_id)
 ) -> dict:
     """
     Get shadow API analytics and statistics
@@ -307,7 +308,7 @@ async def get_shadow_api_analytics(
 @router.get("/analytics/by-compliance")
 async def get_shadow_apis_by_compliance(
     user_id: str = Query(..., description="User ID"),
-    token: str = Depends(verify_token)
+    auth_user_id: str = Depends(get_current_user_id)
 ) -> dict:
     """
     Get shadow APIs grouped by affected compliance requirement
@@ -365,7 +366,7 @@ async def get_shadow_apis_by_compliance(
 @router.get("/risks-by-anomaly")
 async def get_risks_by_anomaly_type(
     user_id: str = Query(..., description="User ID"),
-    token: str = Depends(verify_token)
+    auth_user_id: str = Depends(get_current_user_id)
 ) -> dict:
     """
     Get shadow APIs grouped by anomaly type
@@ -417,7 +418,7 @@ async def get_risks_by_anomaly_type(
 @router.get("/dashboard")
 async def get_shadow_api_dashboard(
     user_id: str = Query(..., description="User ID"),
-    token: str = Depends(verify_token)
+    auth_user_id: str = Depends(get_current_user_id)
 ) -> dict:
     """
     Get comprehensive shadow API dashboard
