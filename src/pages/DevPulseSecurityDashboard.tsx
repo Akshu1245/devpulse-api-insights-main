@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ArrowLeft, Shield, Brain, Upload, FileText, ScanSearch, DollarSign, Bell, Eye } from "lucide-react";
+import { ArrowLeft, Shield, Brain, Upload, FileText, ScanSearch, DollarSign, Bell, Zap, TrendingUp, BarChart3 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import ProtectedRoute from "@/components/ProtectedRoute";
@@ -11,17 +11,22 @@ import CompliancePanel from "@/components/devpulse/CompliancePanel";
 import PostmanImporter from "@/components/devpulse/PostmanImporter";
 import ThinkingTokenPanel from "@/components/devpulse/ThinkingTokenPanel";
 import ComplianceReportPanel from "@/components/devpulse/ComplianceReportPanel";
-import ShadowApiPanel from "@/components/devpulse/ShadowApiPanel";
+import UnifiedRiskScorePanel from "@/components/devpulse/UnifiedRiskScorePanel";
+import InsightEngine from "@/components/devpulse/InsightEngine";
+import WasteWatchBanner from "@/components/devpulse/WasteWatchBanner";
+import CostDistributionPanel from "@/components/devpulse/CostDistributionPanel";
+import AnomalyDetector from "@/components/devpulse/AnomalyDetector";
 
-type Tab = "overview" | "postman" | "scanner" | "llm" | "thinking" | "shadow" | "compliance" | "alerts";
+type Tab = "insights" | "overview" | "postman" | "scanner" | "llm" | "thinking" | "risk" | "compliance" | "alerts";
 
 const tabs: { id: Tab; label: string; icon: React.ElementType; badge?: string }[] = [
+  { id: "insights", label: "Insights", icon: Zap, badge: "NEW" },
   { id: "overview", label: "Overview", icon: Shield },
-  { id: "postman", label: "Postman Import", icon: Upload, badge: "NEW" },
+  { id: "postman", label: "Postman Import", icon: Upload },
   { id: "scanner", label: "API Scanner", icon: ScanSearch },
   { id: "llm", label: "LLM Costs", icon: DollarSign },
   { id: "thinking", label: "Thinking Tokens", icon: Brain, badge: "Patent 2" },
-  { id: "shadow", label: "Shadow APIs", icon: Eye, badge: "Patent 3" },
+  { id: "risk", label: "Risk Score", icon: Shield, badge: "Patent 1" },
   { id: "compliance", label: "Compliance", icon: FileText, badge: "PCI DSS" },
   { id: "alerts", label: "Alerts", icon: Bell },
 ];
@@ -29,13 +34,13 @@ const tabs: { id: Tab; label: string; icon: React.ElementType; badge?: string }[
 function DashboardContent() {
   const { user, signOut } = useAuth();
   const [refreshKey, setRefreshKey] = useState(0);
-  const [activeTab, setActiveTab] = useState<Tab>("overview");
+  // Default to "insights" — zero-click path to value
+  const [activeTab, setActiveTab] = useState<Tab>("insights");
 
   if (!user) return null;
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Nav */}
       <nav className="border-b border-border px-4 sm:px-6 py-4">
         <div className="max-w-6xl mx-auto flex items-center justify-between gap-4">
           <div className="flex items-center gap-3 min-w-0">
@@ -65,7 +70,6 @@ function DashboardContent() {
         </div>
       </nav>
 
-      {/* Tab Bar */}
       <div className="border-b border-border bg-background/80 backdrop-blur-sm sticky top-0 z-10">
         <div className="max-w-6xl mx-auto px-4 sm:px-6">
           <div className="flex gap-1 overflow-x-auto scrollbar-none py-1">
@@ -97,8 +101,26 @@ function DashboardContent() {
         </div>
       </div>
 
-      {/* Content */}
       <main className="max-w-6xl mx-auto px-4 sm:px-6 py-8">
+        {/* WasteWatch Banner shown on all tabs */}
+        <WasteWatchBanner userId={user.id} />
+
+        {activeTab === "insights" && (
+          <div className="space-y-6">
+            <div className="mb-2">
+              <h2 className="text-xl font-bold font-serif text-foreground">Decision Insights</h2>
+              <p className="text-sm text-muted-foreground mt-1">
+                Top actions ranked by financial impact. No noise — only what matters.
+              </p>
+            </div>
+            <InsightEngine userId={user.id} />
+            <div className="grid lg:grid-cols-2 gap-6">
+              <CostDistributionPanel userId={user.id} />
+              <AnomalyDetector userId={user.id} />
+            </div>
+          </div>
+        )}
+
         {activeTab === "overview" && (
           <div className="space-y-8">
             <OverviewCards userId={user.id} refreshKey={refreshKey} />
@@ -114,8 +136,8 @@ function DashboardContent() {
             <div className="mb-6">
               <h2 className="text-xl font-bold font-serif text-foreground">Postman Collection Import</h2>
               <p className="text-sm text-muted-foreground mt-1">
-                Import your Postman collection to instantly detect exposed credentials and security vulnerabilities.
-                This is the fastest way to find API keys that may have been leaked in public workspaces.
+                Upload your Postman collection. Auto-scans for exposed credentials and security vulnerabilities.
+                You'll see the most shocking finding immediately — no clicks, no setup.
               </p>
             </div>
             <PostmanImporter userId={user.id} />
@@ -127,8 +149,8 @@ function DashboardContent() {
             <div className="mb-6">
               <h2 className="text-xl font-bold font-serif text-foreground">API Security Scanner</h2>
               <p className="text-sm text-muted-foreground mt-1">
-                OWASP API Security Top 10 scanning. Checks HTTPS enforcement, security headers, CORS policy,
-                and credential exposure. Results stored per user for compliance evidence.
+                OWASP API Security Top 10. Only HIGH and CRITICAL findings shown by default.
+                Confidence scores prevent false positives. Results stored for compliance evidence.
               </p>
             </div>
             <APIScanner userId={user.id} />
@@ -140,11 +162,13 @@ function DashboardContent() {
             <div className="mb-6">
               <h2 className="text-xl font-bold font-serif text-foreground">LLM Cost Intelligence</h2>
               <p className="text-sm text-muted-foreground mt-1">
-                Real-time token usage and cost tracking across OpenAI, Anthropic, Google, Mistral, and Cohere.
-                Per-model breakdown with 30-day trend analysis.
+                Real-time LLM token usage and cost tracking. Per-model % distribution with 30-day trend.
               </p>
             </div>
-            <LLMCostPanel userId={user.id} />
+            <div className="space-y-6">
+              <CostDistributionPanel userId={user.id} />
+              <LLMCostPanel userId={user.id} />
+            </div>
           </div>
         )}
 
@@ -161,16 +185,16 @@ function DashboardContent() {
           </div>
         )}
 
-        {activeTab === "shadow" && (
+        {activeTab === "risk" && (
           <div>
             <div className="mb-6">
-              <h2 className="text-xl font-bold font-serif text-foreground">Shadow API Discovery</h2>
+              <h2 className="text-xl font-bold font-serif text-foreground">Unified Risk Score</h2>
               <p className="text-sm text-muted-foreground mt-1">
-                IDE-level static route extraction correlated with local development traffic to discover
-                undocumented shadow API endpoints. Zero network infrastructure required (Patent NHCE/DEV/2026/003).
+                Combines API security vulnerability severity with LLM cost anomaly data into one score per endpoint.
+                Formula: (60% security risk) + (40% cost anomaly risk) = Unified Risk Score (Patent NHCE/DEV/2026/001).
               </p>
             </div>
-            <ShadowApiPanel userId={user.id} />
+            <UnifiedRiskScorePanel userId={user.id} />
           </div>
         )}
 
@@ -211,33 +235,3 @@ export default function DevPulseSecurityDashboard() {
     </ProtectedRoute>
   );
 }
-
-          </div>
-        )}
-      </main>
-    </div>
-  );
-}
-
-export default function DevPulseSecurityDashboard() {
-  return (
-    <ProtectedRoute>
-      <DashboardContent />
-    </ProtectedRoute>
-  );
-}
-
-
-      </main>
-    </div>
-  );
-}
-
-export default function DevPulseSecurityDashboard() {
-  return (
-    <ProtectedRoute>
-      <DashboardContent />
-    </ProtectedRoute>
-  );
-}
-

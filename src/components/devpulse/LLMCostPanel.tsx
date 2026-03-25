@@ -46,8 +46,13 @@ export default function LLMCostPanel({ userId }: Props) {
 
   const modelRows = useMemo(() => {
     const mt = summary?.model_totals || {};
+    const total = summary?.total_cost_inr ?? Object.values(mt).reduce((s, v) => s + v, 0);
     return Object.entries(mt)
-      .map(([model, cost]) => ({ model, cost }))
+      .map(([model, cost]) => ({
+        model,
+        cost,
+        pct: total > 0 ? Math.round((cost / total) * 100) : 0,
+      }))
       .sort((a, b) => b.cost - a.cost);
   }, [summary]);
 
@@ -143,23 +148,28 @@ export default function LLMCostPanel({ userId }: Props) {
         {modelRows.length === 0 ? (
           <p className="text-sm text-muted-foreground">No per-model breakdown.</p>
         ) : (
-          <div className="overflow-x-auto rounded-xl border border-border">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="bg-muted/20 text-left text-muted-foreground">
-                  <th className="p-3 font-medium">Model</th>
-                  <th className="p-3 font-medium">Total ₹</th>
-                </tr>
-              </thead>
-              <tbody>
-                {modelRows.map((r) => (
-                  <tr key={r.model} className="border-t border-border">
-                    <td className="p-3 font-mono text-xs">{r.model}</td>
-                    <td className="p-3 font-mono">{r.cost.toFixed(4)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+            <div className="space-y-2">
+            {modelRows.map((r, i) => (
+              <div key={r.model} className="flex items-center gap-3 p-3 rounded-xl bg-muted/10 border border-border">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between mb-1">
+                    <p className="text-xs font-mono font-medium text-foreground truncate">{r.model}</p>
+                    <div className="flex items-center gap-2 shrink-0 ml-2">
+                      <span className={`text-xs font-bold ${i === 0 ? "text-red-400" : i === 1 ? "text-orange-400" : "text-yellow-400"}`}>
+                        {r.pct}%
+                      </span>
+                      <span className="text-xs font-mono text-foreground">₹{r.cost.toFixed(4)}</span>
+                    </div>
+                  </div>
+                  <div className="h-1.5 rounded-full bg-muted/30 overflow-hidden">
+                    <div
+                      className={`h-full rounded-full ${i === 0 ? "bg-red-400" : i === 1 ? "bg-orange-400" : "bg-yellow-400"}`}
+                      style={{ width: `${r.pct}%` }}
+                    />
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
         )}
       </div>
