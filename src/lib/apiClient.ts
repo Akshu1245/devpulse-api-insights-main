@@ -15,7 +15,7 @@
 import { supabase } from "@/integrations/supabase/client";
 
 const BACKEND_URL =
-  import.meta.env.VITE_BACKEND_URL?.replace(/\/$/, "") ?? "http://localhost:8000";
+  import.meta.env.VITE_BACKEND_URL?.replace(/\/$/, "") ?? "http://localhost:3001";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 

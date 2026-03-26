@@ -1812,8 +1812,14 @@ function calculateUnifiedRiskScore(scans: any[], llmUsage: any[]): any[] {
 
 // ═══════════════════════════════════════════════════════════════════════════
 
-app.listen(port, () => {
-  logger.info(`Hybrid backend running on http://localhost:${port}`);
+app.listen(port, "0.0.0.0", () => {
+  const nodeEnv = process.env.NODE_ENV || "development";
+  const apiUrl = process.env.API_URL || `http://localhost:${port}`;
+  logger.info(`Hybrid backend running`, {
+    environment: nodeEnv,
+    port,
+    apiUrl,
+  });
 });
 
 
