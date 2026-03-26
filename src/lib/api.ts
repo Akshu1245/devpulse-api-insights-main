@@ -1,7 +1,7 @@
 import { supabase } from "@/integrations/supabase/client";
 
 function getBaseUrl(): string {
-  const raw = import.meta.env.VITE_API_BASE_URL;
+  const raw = import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE_URL;
   if (!raw || typeof raw !== "string") {
     return "/_/backend";
   }

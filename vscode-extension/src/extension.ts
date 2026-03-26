@@ -2,6 +2,8 @@ import * as vscode from "vscode";
 import { DevPulseTreeDataProvider } from "./providers/treeViewProvider";
 import { DevPulseCodeLensProvider, DevPulseDiagnostics } from "./providers/codeLensProvider";
 import { WorkspaceScanner } from "./services/workspaceScanner";
+import { ShadowApiScanner } from "./services/shadowApiScanner";
+import { ApiClient } from "./services/apiClient";
 
 type DevPulseWebviewPayload =
   | { type: "devpulse:hostReady"; payload: { workspaceName?: string } }
@@ -116,10 +118,12 @@ export function activate(context: vscode.ExtensionContext): void {
   const targets: DevPulseWebviewTarget[] = [provider, panel];
 
   // Initialize new powerful features
+  const apiClient = new ApiClient();
   const treeDataProvider = new DevPulseTreeDataProvider();
   const codeLensProvider = new DevPulseCodeLensProvider();
-  const diagnostics = new DevPulseDiagnostics(context);
+  const diagnostics = new DevPulseDiagnostics(context, apiClient);
   const scanner = new WorkspaceScanner();
+  const shadowApiScanner = new ShadowApiScanner();
 
   // Register tree view
   vscode.window.registerTreeDataProvider("devpulse.insights", treeDataProvider);
@@ -127,24 +131,39 @@ export function activate(context: vscode.ExtensionContext): void {
 
   const maybePromptConfigureUrl = async (): Promise<void> => {
     const promptedKey = "devpulse.promptedConfigureWebAppUrl";
-    if (state.hasCustomWebAppUrl || !state.isUsingDefaultLocalUrl() || context.globalState.get<boolean>(promptedKey)) {
+    const firstRunKey = "devpulse.firstRunComplete";
+    
+    // Don't prompt again if already configured or if this is first run
+    if (state.hasCustomWebAppUrl || context.globalState.get<boolean>(firstRunKey)) {
       return;
     }
 
-    const configureLabel = "Configure URL";
-    const openLabel = "Open localhost";
+    // Mark first run as complete
+    await context.globalState.update(firstRunKey, true);
+
+    const configureLabel = "Configure Deployed URL";
+    const keepDefaultLabel = "Continue with Localhost";
+    const learnMoreLabel = "Learn More";
+
     const choice = await vscode.window.showInformationMessage(
-      "DevPulse is using localhost by default. Configure a deployed URL for live usage.",
+      "Welcome to DevPulse! Would you like to configure a live web app URL?",
+      { detail: "You can change this later in the extension settings.", modal: true },
       configureLabel,
-      openLabel
+      keepDefaultLabel,
+      learnMoreLabel
     );
 
-    await context.globalState.update(promptedKey, true);
-
-    if (choice === configureLabel) {
-      await vscode.commands.executeCommand("devpulse.configureWebAppUrl");
-    } else if (choice === openLabel) {
-      void vscode.env.openExternal(vscode.Uri.parse(state.webAppUrl));
+    switch (choice) {
+      case configureLabel:
+        await vscode.commands.executeCommand("devpulse.configureWebAppUrl");
+        break;
+      case learnMoreLabel:
+        void vscode.env.openExternal(vscode.Uri.parse("https://devpulse.ai/vscode-setup"));
+        break;
+      case keepDefaultLabel:
+      default:
+        // Do nothing, keep default localhost
+        break;
     }
   };
 
@@ -169,22 +188,88 @@ export function activate(context: vscode.ExtensionContext): void {
         ignoreFocusOut: true,
         validateInput: (input) => {
           const trimmed = input.trim();
+          
+          // Block localhost and private IP range URLs outside of development
+          const localhostPatterns = [
+            /^(http|https):\/\/localhost(:\d+)?$/,
+            /^(http|https):\/\/127\.0\.0\.1(:\d+)?$/,
+            /^(http|https):\/\/\[::1\](:\d+)?$/
+          ];
+
           try {
             const parsed = new URL(trimmed);
+            
+            // Validate protocol
             if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
               return "URL must start with http:// or https://";
             }
+
+            // Block reserved/private domain patterns
+            const reservedDomains = [
+              "localhost", 
+              "127.0.0.1", 
+              "::1", 
+              ".local", 
+              ".internal",
+              "10.", 
+              "172.16.", 
+              "192.168.",
+              "169.254."
+            ];
+
+            const isDev = reservedDomains.some(domain => parsed.hostname.includes(domain));
+            if (isDev) {
+              return "Please provide a publicly accessible deployment URL";
+            }
+
+            // Check domain length and complexity
+            if (parsed.hostname.length < 4) {
+              return "Domain seems too short. Check your URL.";
+            }
+
+            // Verify domain contains a dot (basic domain validation)
+            if (!parsed.hostname.includes(".")) {
+              return "Invalid domain. Use a fully qualified domain name.";
+            }
+
             return null;
           } catch {
-            return "Enter a valid URL";
+            return "Enter a valid, publicly accessible URL";
           }
         }
       });
 
       if (!value) return;
+
       const config = vscode.workspace.getConfiguration("devpulse");
-      await config.update("webAppUrl", value.trim(), vscode.ConfigurationTarget.Global);
-      vscode.window.showInformationMessage(`DevPulse URL updated to ${value.trim()}`);
+      
+      try {
+        // Attempt to verify the URL by fetching its frame-src
+        const cspResponse = await fetch(`${value}/devpulse-csp-check`, { method: 'GET' })
+          .then(response => response.ok)
+          .catch(() => false);
+
+        if (!cspResponse) {
+          const confirm = await vscode.window.showWarningMessage(
+            "Could not verify the app's CSP configuration. Proceed anyway?",
+            "Yes", "No"
+          );
+          if (confirm !== "Yes") return;
+        }
+
+        await config.update("webAppUrl", value.trim(), vscode.ConfigurationTarget.Global);
+        
+        vscode.window.showInformationMessage(
+          `DevPulse URL updated to ${value.trim()}. Restart VS Code for full integration.`,
+          "Restart Now"
+        ).then(choice => {
+          if (choice === "Restart Now") {
+            vscode.commands.executeCommand("workbench.action.reloadWindow");
+          }
+        });
+      } catch (error) {
+        vscode.window.showErrorMessage(`URL configuration failed: ${error instanceof Error ? error.message : error}`);
+      }
     }),
     vscode.commands.registerCommand("devpulse.sendEditorContext", async () => {
       const editorContext = getEditorContext(state.maxSelectionChars);
@@ -293,6 +378,66 @@ export function activate(context: vscode.ExtensionContext): void {
       );
 
       vscode.window.showInformationMessage("📊 Report generated successfully!");
+    }),
+    vscode.commands.registerCommand("devpulse.scanShadowApis", async () => {
+      const workspaceFolders = vscode.workspace.workspaceFolders;
+      if (!workspaceFolders) {
+        vscode.window.showWarningMessage("No workspace folder open");
+        return;
+      }
+
+      await vscode.window.withProgress(
+        {
+          location: vscode.ProgressLocation.Notification,
+          title: "DevPulse: Scanning for shadow APIs...",
+          cancellable: false,
+        },
+        async () => {
+          const workspaceRoot = workspaceFolders[0].uri.fsPath;
+          const result = await shadowApiScanner.scan({ workspaceRoot });
+
+          if (result.shadowRoutes.length === 0) {
+            vscode.window.showInformationMessage(
+              `No shadow APIs detected. All ${result.totalRoutes} routes are tracked.`
+            );
+            return;
+          }
+
+          // Show shadow APIs in a quick pick for navigation
+          const items = result.shadowRoutes.map((route) => {
+            const relPath = vscode.workspace.asRelativePath(route.file);
+            return {
+              label: `${route.method} ${route.path}`,
+              description: `${route.framework} — ${relPath}:${route.line}`,
+              detail: `Handler: ${route.handler || "unknown"}`,
+              route,
+            };
+          });
+
+          const selected = await vscode.window.showQuickPick(items, {
+            placeHolder: `${result.shadowRoutes.length} shadow API(s) detected — ${result.totalRoutes} total routes, ${result.knownRoutes} tracked`,
+            matchOnDescription: true,
+            matchOnDetail: true,
+          });
+
+          if (selected) {
+            const doc = await vscode.workspace.openTextDocument(selected.route.file);
+            const editor = await vscode.window.showTextDocument(doc);
+            const pos = new vscode.Position(selected.route.line - 1, 0);
+            editor.selection = new vscode.Selection(pos, pos);
+            editor.revealRange(new vscode.Range(pos, pos), vscode.TextEditorRevealType.InCenter);
+          }
+
+          treeDataProvider.updateInsights([
+            {
+              title: "Shadow APIs Detected",
+              description: `Found ${result.shadowRoutes.length} untracked endpoint(s) across ${result.frameworkBreakdown.express + result.frameworkBreakdown.fastapi + result.frameworkBreakdown.django} framework(s)`,
+              severity: "warning",
+              count: result.shadowRoutes.length,
+            },
+          ]);
+        }
+      );
     })
   );
 

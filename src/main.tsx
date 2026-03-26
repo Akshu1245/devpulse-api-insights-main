@@ -1,4 +1,5 @@
 import { createRoot } from "react-dom/client";
+import { ClerkProvider } from "@clerk/clerk-react";
 import "./index.css";
 
 const rootEl = document.getElementById("root");
@@ -20,6 +21,8 @@ if (!rootEl) {
 	throw new Error("Root element #root was not found.");
 }
 
+const clerkPublishableKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
+
 window.addEventListener("error", (event) => {
 	if (event?.error) {
 		console.error("[Bootstrap Error]", event.error);
@@ -32,7 +35,16 @@ window.addEventListener("unhandledrejection", (event) => {
 
 import("./App.tsx")
 	.then(({ default: App }) => {
-		createRoot(rootEl).render(<App />);
+		if (!clerkPublishableKey) {
+			createRoot(rootEl).render(<App />);
+			return;
+		}
+
+		createRoot(rootEl).render(
+			<ClerkProvider publishableKey={clerkPublishableKey}>
+				<App />
+			</ClerkProvider>
+		);
 	})
 	.catch((error: unknown) => {
 		const message = error instanceof Error ? `${error.message}\n\n${error.stack || ""}` : String(error);

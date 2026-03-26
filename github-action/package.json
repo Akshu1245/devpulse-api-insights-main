@@ -1,0 +1,11 @@
+{
+  "name": "devpulse-github-action",
+  "version": "1.0.0",
+  "description": "GitHub Action for DevPulse API Security Scanning",
+  "main": "scan.js",
+  "scripts": {
+    "test": "node scan.js"
+  },
+  "keywords": ["security", "api", "devpulse", "github-action", "secret-detection"],
+  "license": "MIT"
+}

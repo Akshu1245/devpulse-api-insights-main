@@ -1,0 +1,931 @@
+{
+  "report_id": "DEVPULSE-DEMO-USE-20260325145638",
+  "generated_at": "2026-03-25T14:56:38.580795+00:00",
+  "organization": "ACME Payments Ltd.",
+  "report_type": "both",
+  "scan_summary": {
+    "total_findings": 14,
+    "critical": 5,
+    "high": 5,
+    "medium": 2,
+    "low": 2
+  },
+  "pci_dss": {
+    "version": "4.0.1",
+    "effective_date": "March 31, 2025",
+    "overall_status": "NON_COMPLIANT",
+    "overall_message": "20 PCI DSS requirement(s) are failing. Immediate remediation required before payment processing can be certified.",
+    "compliance_percentage": 27.3,
+    "requirements_pass": 9,
+    "requirements_fail": 20,
+    "requirements_warn": 4,
+    "requirements": [
+      {
+        "requirement_id": "6.2.4",
+        "title": "Software development practices prevent introduction of security vulnerabilities",
+        "description": "BOLA vulnerabilities arise from missing object-level access control checks. PCI DSS 6.2.4 mandates secure coding practices that prevent authorization bypass in all custom code.",
+        "owasp_category": "API1:2023",
+        "status": "FAIL",
+        "evidence": "DevPulse DAST scan detected 1 finding(s) related to API1:2023 (Broken Object Level Authorization).",
+        "findings": [
+          {
+            "issue": "Unauthorized access to object detected via BOLA test",
+            "risk_level": "critical",
+            "recommendation": "Validate resource ownership on every GET/PATCH/DELETE by object ID.",
+            "endpoint": "/api/v1/users/{id}/profile"
+          }
+        ],
+        "remediation": "Implement server-side authorization checks on every API endpoint. Validate the authenticated user has permission to access the specific resource object. Use ABAC or RBAC policies consistently.",
+        "gdpr_articles": [
+          "Article 5(1)(f) \u2014 Integrity and Confidentiality",
+          "Article 25 \u2014 Data Protection by Design and by Default",
+          "Article 32 \u2014 Security of Processing"
+        ]
+      },
+      {
+        "requirement_id": "6.3.1",
+        "title": "Security vulnerabilities are identified and addressed",
+        "description": "BOLA must be detected through security testing (DAST/SAST) and remediated before deployment to production.",
+        "owasp_category": "API1:2023",
+        "status": "FAIL",
+        "evidence": "DevPulse DAST scan detected 1 finding(s) related to API1:2023 (Broken Object Level Authorization).",
+        "findings": [
+          {
+            "issue": "Unauthorized access to object detected via BOLA test",
+            "risk_level": "critical",
+            "recommendation": "Validate resource ownership on every GET/PATCH/DELETE by object ID.",
+            "endpoint": "/api/v1/users/{id}/profile"
+          }
+        ],
+        "remediation": "Add automated BOLA testing to CI/CD pipeline. Scan every pull request for object-level authorization gaps.",
+        "gdpr_articles": [
+          "Article 5(1)(f) \u2014 Integrity and Confidentiality",
+          "Article 25 \u2014 Data Protection by Design and by Default",
+          "Article 32 \u2014 Security of Processing"
+        ]
+      },
+      {
+        "requirement_id": "7.2.1",
+        "title": "Access is granted on a need-to-know basis",
+        "description": "BOLA directly violates the need-to-know principle by allowing unauthorized access to objects outside the user's scope.",
+        "owasp_category": "API1:2023",
+        "status": "FAIL",
+        "evidence": "DevPulse DAST scan detected 1 finding(s) related to API1:2023 (Broken Object Level Authorization).",
+        "findings": [
+          {
+            "issue": "Unauthorized access to object detected via BOLA test",
+            "risk_level": "critical",
+            "recommendation": "Validate resource ownership on every GET/PATCH/DELETE by object ID.",
+            "endpoint": "/api/v1/users/{id}/profile"
+          }
+        ],
+        "remediation": "Enforce least-privilege access. Map every API endpoint to required roles. Verify ownership before returning resources.",
+        "gdpr_articles": [
+          "Article 5(1)(f) \u2014 Integrity and Confidentiality",
+          "Article 25 \u2014 Data Protection by Design and by Default",
+          "Article 32 \u2014 Security of Processing"
+        ]
+      },
+      {
+        "requirement_id": "8.2.1",
+        "title": "All user IDs and authentication credentials are managed",
+        "description": "Broken authentication allows attackers to compromise authentication tokens or exploit implementation flaws to hijack sessions.",
+        "owasp_category": "API2:2023",
+        "status": "FAIL",
+        "evidence": "DevPulse DAST scan detected 3 finding(s) related to API2:2023 (Broken Authentication).",
+        "findings": [
+          {
+            "issue": "API key transmitted in URL query parameter",
+            "risk_level": "critical",
+            "recommendation": "Move API keys to Authorization header. Never include secrets in URLs.",
+            "endpoint": "/api/v1/external?api_key=sk-abc123"
+          },
+          {
+            "issue": "Bearer token accepted over HTTP (unencrypted)",
+            "risk_level": "critical",
+            "recommendation": "Reject authentication over plaintext HTTP. Enforce HTTPS for all auth.",
+            "endpoint": "/api/v1/auth/token"
+          },
+          {
+            "issue": "Missing rate limiting on authentication endpoint",
+            "risk_level": "high",
+            "recommendation": "Implement rate limiting: max 5 auth attempts per 15 minutes per IP.",
+            "endpoint": "/api/v1/auth/login"
+          }
+        ],
+        "remediation": "Implement strong authentication mechanisms. Use short-lived JWTs with rotation. Enforce MFA for privileged accounts. Implement account lockout after failed attempts.",
+        "gdpr_articles": [
+          "Article 32(1)(b) \u2014 Ongoing confidentiality, integrity, availability",
+          "Article 32(1)(d) \u2014 Processes for regularly testing security"
+        ]
+      },
+      {
+        "requirement_id": "8.3.1",
+        "title": "All user access to system components is authenticated",
+        "description": "Every API endpoint must require proper authentication. No endpoint should be accessible without valid credentials.",
+        "owasp_category": "API2:2023",
+        "status": "FAIL",
+        "evidence": "DevPulse DAST scan detected 3 finding(s) related to API2:2023 (Broken Authentication).",
+        "findings": [
+          {
+            "issue": "API key transmitted in URL query parameter",
+            "risk_level": "critical",
+            "recommendation": "Move API keys to Authorization header. Never include secrets in URLs.",
+            "endpoint": "/api/v1/external?api_key=sk-abc123"
+          },
+          {
+            "issue": "Bearer token accepted over HTTP (unencrypted)",
+            "risk_level": "critical",
+            "recommendation": "Reject authentication over plaintext HTTP. Enforce HTTPS for all auth.",
+            "endpoint": "/api/v1/auth/token"
+          },
+          {
+            "issue": "Missing rate limiting on authentication endpoint",
+            "risk_level": "high",
+            "recommendation": "Implement rate limiting: max 5 auth attempts per 15 minutes per IP.",
+            "endpoint": "/api/v1/auth/login"
+          }
+        ],
+        "remediation": "Audit all API endpoints for authentication requirements. Remove public access to internal APIs. Implement API gateway authentication.",
+        "gdpr_articles": [
+          "Article 32(1)(b) \u2014 Ongoing confidentiality, integrity, availability",
+          "Article 32(1)(d) \u2014 Processes for regularly testing security"
+        ]
+      },
+      {
+        "requirement_id": "8.3.6",
+        "title": "Minimum password complexity and strength",
+        "description": "Weak password policies enable brute-force attacks against API authentication endpoints.",
+        "owasp_category": "API2:2023",
+        "status": "FAIL",
+        "evidence": "DevPulse DAST scan detected 3 finding(s) related to API2:2023 (Broken Authentication).",
+        "findings": [
+          {
+            "issue": "API key transmitted in URL query parameter",
+            "risk_level": "critical",
+            "recommendation": "Move API keys to Authorization header. Never include secrets in URLs.",
+            "endpoint": "/api/v1/external?api_key=sk-abc123"
+          },
+          {
+            "issue": "Bearer token accepted over HTTP (unencrypted)",
+            "risk_level": "critical",
+            "recommendation": "Reject authentication over plaintext HTTP. Enforce HTTPS for all auth.",
+            "endpoint": "/api/v1/auth/token"
+          },
+          {
+            "issue": "Missing rate limiting on authentication endpoint",
+            "risk_level": "high",
+            "recommendation": "Implement rate limiting: max 5 auth attempts per 15 minutes per IP.",
+            "endpoint": "/api/v1/auth/login"
+          }
+        ],
+        "remediation": "Enforce minimum 12-character passwords with complexity requirements. Implement credential stuffing protection.",
+        "gdpr_articles": [
+          "Article 32(1)(b) \u2014 Ongoing confidentiality, integrity, availability",
+          "Article 32(1)(d) \u2014 Processes for regularly testing security"
+        ]
+      },
+      {
+        "requirement_id": "8.4.1",
+        "title": "MFA for all non-console administrative access",
+        "description": "Administrative API access without MFA is a critical vulnerability.",
+        "owasp_category": "API2:2023",
+        "status": "FAIL",
+        "evidence": "DevPulse DAST scan detected 3 finding(s) related to API2:2023 (Broken Authentication).",
+        "findings": [
+          {
+            "issue": "API key transmitted in URL query parameter",
+            "risk_level": "critical",
+            "recommendation": "Move API keys to Authorization header. Never include secrets in URLs.",
+            "endpoint": "/api/v1/external?api_key=sk-abc123"
+          },
+          {
+            "issue": "Bearer token accepted over HTTP (unencrypted)",
+            "risk_level": "critical",
+            "recommendation": "Reject authentication over plaintext HTTP. Enforce HTTPS for all auth.",
+            "endpoint": "/api/v1/auth/token"
+          },
+          {
+            "issue": "Missing rate limiting on authentication endpoint",
+            "risk_level": "high",
+            "recommendation": "Implement rate limiting: max 5 auth attempts per 15 minutes per IP.",
+            "endpoint": "/api/v1/auth/login"
+          }
+        ],
+        "remediation": "Implement MFA for all administrative and privileged API access. Use hardware tokens or TOTP.",
+        "gdpr_articles": [
+          "Article 32(1)(b) \u2014 Ongoing confidentiality, integrity, availability",
+          "Article 32(1)(d) \u2014 Processes for regularly testing security"
+        ]
+      },
+      {
+        "requirement_id": "6.2.4",
+        "title": "Software development practices prevent introduction of security vulnerabilities",
+        "description": "Mass assignment and excessive data exposure violate secure coding practices by exposing more data than the client needs.",
+        "owasp_category": "API3:2023",
+        "status": "FAIL",
+        "evidence": "DevPulse DAST scan detected 1 finding(s) related to API3:2023 (Broken Object Property Level Authorization).",
+        "findings": [
+          {
+            "issue": "Excessive data exposure: full user object returned including password hash",
+            "risk_level": "high",
+            "recommendation": "Use DTOs. Strip sensitive fields (password, internal_id) from responses.",
+            "endpoint": "/api/v1/users/me"
+          }
+        ],
+        "remediation": "Use DTOs (Data Transfer Objects) with allowlists for every API endpoint. Never bind request bodies directly to internal models. Strip sensitive fields from responses.",
+        "gdpr_articles": [
+          "Article 5(1)(c) \u2014 Data Minimisation",
+          "Article 5(1)(f) \u2014 Integrity and Confidentiality",
+          "Article 25 \u2014 Data Protection by Design and by Default"
+        ]
+      },
+      {
+        "requirement_id": "7.2.1",
+        "title": "Access is granted on a need-to-know basis",
+        "description": "Exposing object properties beyond the user's authorization level violates need-to-know access control.",
+        "owasp_category": "API3:2023",
+        "status": "FAIL",
+        "evidence": "DevPulse DAST scan detected 1 finding(s) related to API3:2023 (Broken Object Property Level Authorization).",
+        "findings": [
+          {
+            "issue": "Excessive data exposure: full user object returned including password hash",
+            "risk_level": "high",
+            "recommendation": "Use DTOs. Strip sensitive fields (password, internal_id) from responses.",
+            "endpoint": "/api/v1/users/me"
+          }
+        ],
+        "remediation": "Implement field-level authorization. Define per-role field access policies. Validate all input properties against schema.",
+        "gdpr_articles": [
+          "Article 5(1)(c) \u2014 Data Minimisation",
+          "Article 5(1)(f) \u2014 Integrity and Confidentiality",
+          "Article 25 \u2014 Data Protection by Design and by Default"
+        ]
+      },
+      {
+        "requirement_id": "3.4.1",
+        "title": "PAN is secured wherever it is stored",
+        "description": "If cardholder data properties are exposed through API responses, PAN data may leak to unauthorized consumers.",
+        "owasp_category": "API3:2023",
+        "status": "FAIL",
+        "evidence": "DevPulse DAST scan detected 1 finding(s) related to API3:2023 (Broken Object Property Level Authorization).",
+        "findings": [
+          {
+            "issue": "Excessive data exposure: full user object returned including password hash",
+            "risk_level": "high",
+            "recommendation": "Use DTOs. Strip sensitive fields (password, internal_id) from responses.",
+            "endpoint": "/api/v1/users/me"
+          }
+        ],
+        "remediation": "Mask PAN in all API responses. Use tokenization for card data. Audit all endpoints that return payment-related objects.",
+        "gdpr_articles": [
+          "Article 5(1)(c) \u2014 Data Minimisation",
+          "Article 5(1)(f) \u2014 Integrity and Confidentiality",
+          "Article 25 \u2014 Data Protection by Design and by Default"
+        ]
+      },
+      {
+        "requirement_id": "6.4.1",
+        "title": "Public-facing web applications are protected against attacks",
+        "description": "Unrestricted resource consumption leads to denial of service, directly impacting payment processing availability and system integrity.",
+        "owasp_category": "API4:2023",
+        "status": "PASS",
+        "evidence": "DevPulse DAST scan found no violations of this requirement.",
+        "findings": [],
+        "remediation": "Implement rate limiting per user, per IP, and per endpoint. Set maximum request/response sizes. Implement request queuing for expensive operations.",
+        "gdpr_articles": [
+          "Article 32(1)(b) \u2014 Ongoing confidentiality, integrity, availability",
+          "Article 32(1)(c) \u2014 Ability to restore availability after incident"
+        ]
+      },
+      {
+        "requirement_id": "10.4.1",
+        "title": "Audit logs are reviewed to identify anomalies",
+        "description": "Resource exhaustion attacks generate distinctive traffic patterns that should trigger alerts.",
+        "owasp_category": "API4:2023",
+        "status": "PASS",
+        "evidence": "DevPulse DAST scan found no violations of this requirement.",
+        "findings": [],
+        "remediation": "Implement anomaly detection for request volume. Alert on unusual resource consumption patterns. Log rate limit violations.",
+        "gdpr_articles": [
+          "Article 32(1)(b) \u2014 Ongoing confidentiality, integrity, availability",
+          "Article 32(1)(c) \u2014 Ability to restore availability after incident"
+        ]
+      },
+      {
+        "requirement_id": "11.3.1",
+        "title": "Vulnerabilities are managed by risk ranking",
+        "description": "Denial of service risk must be assessed and prioritized in vulnerability management.",
+        "owasp_category": "API4:2023",
+        "status": "PASS",
+        "evidence": "DevPulse DAST scan found no violations of this requirement.",
+        "findings": [],
+        "remediation": "Include DoS resilience in vulnerability assessments. Test API endpoints for resource consumption limits.",
+        "gdpr_articles": [
+          "Article 32(1)(b) \u2014 Ongoing confidentiality, integrity, availability",
+          "Article 32(1)(c) \u2014 Ability to restore availability after incident"
+        ]
+      },
+      {
+        "requirement_id": "7.2.1",
+        "title": "Access is granted on a need-to-know basis",
+        "description": "BFLA allows regular users to invoke administrative functions, directly violating need-to-know access control.",
+        "owasp_category": "API5:2023",
+        "status": "FAIL",
+        "evidence": "DevPulse DAST scan detected 1 finding(s) related to API5:2023 (Broken Function Level Authorization).",
+        "findings": [
+          {
+            "issue": "Admin endpoint accessible without admin role verification",
+            "risk_level": "critical",
+            "recommendation": "Enforce role-based authorization on all /admin/* routes.",
+            "endpoint": "/api/v1/admin/users"
+          }
+        ],
+        "remediation": "Implement role-based access control (RBAC) at the function level. Deny by default. Verify caller role before executing any administrative operation.",
+        "gdpr_articles": [
+          "Article 5(1)(f) \u2014 Integrity and Confidentiality",
+          "Article 25 \u2014 Data Protection by Design and by Default",
+          "Article 32 \u2014 Security of Processing"
+        ]
+      },
+      {
+        "requirement_id": "7.2.2",
+        "title": "Access to system components is assigned based on job function",
+        "description": "Administrative API functions must be restricted to users with appropriate job functions.",
+        "owasp_category": "API5:2023",
+        "status": "FAIL",
+        "evidence": "DevPulse DAST scan detected 1 finding(s) related to API5:2023 (Broken Function Level Authorization).",
+        "findings": [
+          {
+            "issue": "Admin endpoint accessible without admin role verification",
+            "risk_level": "critical",
+            "recommendation": "Enforce role-based authorization on all /admin/* routes.",
+            "endpoint": "/api/v1/admin/users"
+          }
+        ],
+        "remediation": "Define explicit role-to-function mappings. Remove admin endpoints from public API documentation. Implement API gateway policies.",
+        "gdpr_articles": [
+          "Article 5(1)(f) \u2014 Integrity and Confidentiality",
+          "Article 25 \u2014 Data Protection by Design and by Default",
+          "Article 32 \u2014 Security of Processing"
+        ]
+      },
+      {
+        "requirement_id": "7.2.5",
+        "title": "All access is authorized and authenticated",
+        "description": "Every function-level operation must verify both authentication and authorization.",
+        "owasp_category": "API5:2023",
+        "status": "FAIL",
+        "evidence": "DevPulse DAST scan detected 1 finding(s) related to API5:2023 (Broken Function Level Authorization).",
+        "findings": [
+          {
+            "issue": "Admin endpoint accessible without admin role verification",
+            "risk_level": "critical",
+            "recommendation": "Enforce role-based authorization on all /admin/* routes.",
+            "endpoint": "/api/v1/admin/users"
+          }
+        ],
+        "remediation": "Add authorization middleware to all admin routes. Implement function-level permission checks. Log all unauthorized access attempts.",
+        "gdpr_articles": [
+          "Article 5(1)(f) \u2014 Integrity and Confidentiality",
+          "Article 25 \u2014 Data Protection by Design and by Default",
+          "Article 32 \u2014 Security of Processing"
+        ]
+      },
+      {
+        "requirement_id": "6.2.4",
+        "title": "Software development practices prevent introduction of security vulnerabilities",
+        "description": "Business logic abuse is a design-level vulnerability that must be prevented through secure design practices.",
+        "owasp_category": "API6:2023",
+        "status": "PASS",
+        "evidence": "DevPulse DAST scan found no violations of this requirement.",
+        "findings": [],
+        "remediation": "Implement CAPTCHA or proof-of-work for sensitive flows. Add device fingerprinting. Detect automation patterns. Limit transaction velocity.",
+        "gdpr_articles": [
+          "Article 5(1)(b) \u2014 Purpose Limitation",
+          "Article 32 \u2014 Security of Processing"
+        ]
+      },
+      {
+        "requirement_id": "6.4.1",
+        "title": "Public-facing web applications are protected against attacks",
+        "description": "Business logic abuse can result in financial loss through automated exploitation of payment and transaction flows.",
+        "owasp_category": "API6:2023",
+        "status": "PASS",
+        "evidence": "DevPulse DAST scan found no violations of this requirement.",
+        "findings": [],
+        "remediation": "Implement WAF rules for automation detection. Add business-level rate limiting. Monitor for unusual transaction patterns.",
+        "gdpr_articles": [
+          "Article 5(1)(b) \u2014 Purpose Limitation",
+          "Article 32 \u2014 Security of Processing"
+        ]
+      },
+      {
+        "requirement_id": "10.4.1",
+        "title": "Audit logs are reviewed to identify anomalies",
+        "description": "Business logic abuse patterns are detectable through log analysis and anomaly detection.",
+        "owasp_category": "API6:2023",
+        "status": "PASS",
+        "evidence": "DevPulse DAST scan found no violations of this requirement.",
+        "findings": [],
+        "remediation": "Log all sensitive business operations. Implement real-time anomaly detection. Alert on suspicious transaction velocity.",
+        "gdpr_articles": [
+          "Article 5(1)(b) \u2014 Purpose Limitation",
+          "Article 32 \u2014 Security of Processing"
+        ]
+      },
+      {
+        "requirement_id": "6.2.4",
+        "title": "Software development practices prevent introduction of security vulnerabilities",
+        "description": "SSRF allows attackers to pivot to internal systems, potentially accessing cardholder data environments (CDE).",
+        "owasp_category": "API7:2023",
+        "status": "FAIL",
+        "evidence": "DevPulse DAST scan detected 1 finding(s) related to API7:2023 (Server Side Request Forgery).",
+        "findings": [
+          {
+            "issue": "SSRF: user-controlled URL parameter fetched without validation",
+            "risk_level": "high",
+            "recommendation": "Validate and allowlist URLs. Block internal IP ranges.",
+            "endpoint": "/api/v1/fetch?url="
+          }
+        ],
+        "remediation": "Validate and sanitize all user-supplied URLs. Use allowlists for permitted domains. Block requests to internal IP ranges (10.x, 172.16-31.x, 192.168.x).",
+        "gdpr_articles": [
+          "Article 32(1)(a) \u2014 Encryption and pseudonymisation",
+          "Article 32(1)(b) \u2014 Ongoing confidentiality, integrity, availability",
+          "Article 33 \u2014 Notification of breach to supervisory authority"
+        ]
+      },
+      {
+        "requirement_id": "1.3.1",
+        "title": "Inbound traffic to the CDE is restricted",
+        "description": "SSRF can bypass network segmentation by making the server initiate connections to internal resources.",
+        "owasp_category": "API7:2023",
+        "status": "FAIL",
+        "evidence": "DevPulse DAST scan detected 1 finding(s) related to API7:2023 (Server Side Request Forgery).",
+        "findings": [
+          {
+            "issue": "SSRF: user-controlled URL parameter fetched without validation",
+            "risk_level": "high",
+            "recommendation": "Validate and allowlist URLs. Block internal IP ranges.",
+            "endpoint": "/api/v1/fetch?url="
+          }
+        ],
+        "remediation": "Implement network-level controls preventing servers from reaching internal resources. Use egress filtering. Isolate the CDE from application servers.",
+        "gdpr_articles": [
+          "Article 32(1)(a) \u2014 Encryption and pseudonymisation",
+          "Article 32(1)(b) \u2014 Ongoing confidentiality, integrity, availability",
+          "Article 33 \u2014 Notification of breach to supervisory authority"
+        ]
+      },
+      {
+        "requirement_id": "1.4.1",
+        "title": "Outbound traffic from the CDE is restricted",
+        "description": "SSRF in the CDE could exfiltrate cardholder data to attacker-controlled servers.",
+        "owasp_category": "API7:2023",
+        "status": "FAIL",
+        "evidence": "DevPulse DAST scan detected 1 finding(s) related to API7:2023 (Server Side Request Forgery).",
+        "findings": [
+          {
+            "issue": "SSRF: user-controlled URL parameter fetched without validation",
+            "risk_level": "high",
+            "recommendation": "Validate and allowlist URLs. Block internal IP ranges.",
+            "endpoint": "/api/v1/fetch?url="
+          }
+        ],
+        "remediation": "Restrict outbound connections from CDE components. Monitor for unusual outbound traffic. Use DNS filtering.",
+        "gdpr_articles": [
+          "Article 32(1)(a) \u2014 Encryption and pseudonymisation",
+          "Article 32(1)(b) \u2014 Ongoing confidentiality, integrity, availability",
+          "Article 33 \u2014 Notification of breach to supervisory authority"
+        ]
+      },
+      {
+        "requirement_id": "2.2.1",
+        "title": "Configuration standards are developed and implemented",
+        "description": "Missing security headers (HSTS, CSP, X-Frame-Options) indicate non-compliance with configuration standards.",
+        "owasp_category": "API8:2023",
+        "status": "FAIL",
+        "evidence": "DevPulse DAST scan detected 5 finding(s) related to API8:2023 (Security Misconfiguration).",
+        "findings": [
+          {
+            "issue": "HTTP instead of HTTPS detected",
+            "risk_level": "critical",
+            "recommendation": "Enforce HTTPS with HSTS. Redirect all HTTP traffic to HTTPS.",
+            "endpoint": "/api/v1/payments"
+          },
+          {
+            "issue": "Missing Strict-Transport-Security header",
+            "risk_level": "high",
+            "recommendation": "Add Strict-Transport-Security: max-age=31536000; includeSubDomains",
+            "endpoint": "/api/v1/users"
+          },
+          {
+            "issue": "Missing X-Frame-Options header",
+            "risk_level": "medium",
+            "recommendation": "Set X-Frame-Options: DENY to prevent clickjacking.",
+            "endpoint": "/api/v1/dashboard"
+          },
+          {
+            "issue": "Open CORS policy (Access-Control-Allow-Origin: *)",
+            "risk_level": "high",
+            "recommendation": "Restrict CORS to specific trusted origins. Remove wildcard.",
+            "endpoint": "/api/v1/data"
+          },
+          {
+            "issue": "Missing Content-Security-Policy header",
+            "risk_level": "medium",
+            "recommendation": "Implement a strict Content-Security-Policy to prevent XSS.",
+            "endpoint": "/api/v1/reports"
+          }
+        ],
+        "remediation": "Implement security header standards: HSTS, Content-Security-Policy, X-Frame-Options, X-Content-Type-Options, Referrer-Policy. Remove debug endpoints.",
+        "gdpr_articles": [
+          "Article 25 \u2014 Data Protection by Design and by Default",
+          "Article 32(1)(a) \u2014 Encryption of personal data",
+          "Article 32(1)(b) \u2014 Ongoing confidentiality, integrity, availability"
+        ]
+      },
+      {
+        "requirement_id": "2.2.4",
+        "title": "Only necessary services are enabled",
+        "description": "Unnecessary services and features increase the attack surface.",
+        "owasp_category": "API8:2023",
+        "status": "FAIL",
+        "evidence": "DevPulse DAST scan detected 5 finding(s) related to API8:2023 (Security Misconfiguration).",
+        "findings": [
+          {
+            "issue": "HTTP instead of HTTPS detected",
+            "risk_level": "critical",
+            "recommendation": "Enforce HTTPS with HSTS. Redirect all HTTP traffic to HTTPS.",
+            "endpoint": "/api/v1/payments"
+          },
+          {
+            "issue": "Missing Strict-Transport-Security header",
+            "risk_level": "high",
+            "recommendation": "Add Strict-Transport-Security: max-age=31536000; includeSubDomains",
+            "endpoint": "/api/v1/users"
+          },
+          {
+            "issue": "Missing X-Frame-Options header",
+            "risk_level": "medium",
+            "recommendation": "Set X-Frame-Options: DENY to prevent clickjacking.",
+            "endpoint": "/api/v1/dashboard"
+          },
+          {
+            "issue": "Open CORS policy (Access-Control-Allow-Origin: *)",
+            "risk_level": "high",
+            "recommendation": "Restrict CORS to specific trusted origins. Remove wildcard.",
+            "endpoint": "/api/v1/data"
+          },
+          {
+            "issue": "Missing Content-Security-Policy header",
+            "risk_level": "medium",
+            "recommendation": "Implement a strict Content-Security-Policy to prevent XSS.",
+            "endpoint": "/api/v1/reports"
+          }
+        ],
+        "remediation": "Disable debug mode, unused HTTP methods, and directory listings. Remove default pages and documentation from production.",
+        "gdpr_articles": [
+          "Article 25 \u2014 Data Protection by Design and by Default",
+          "Article 32(1)(a) \u2014 Encryption of personal data",
+          "Article 32(1)(b) \u2014 Ongoing confidentiality, integrity, availability"
+        ]
+      },
+      {
+        "requirement_id": "6.2.4",
+        "title": "Software development practices prevent introduction of security vulnerabilities",
+        "description": "Security misconfigurations must be caught during development through automated configuration validation.",
+        "owasp_category": "API8:2023",
+        "status": "FAIL",
+        "evidence": "DevPulse DAST scan detected 5 finding(s) related to API8:2023 (Security Misconfiguration).",
+        "findings": [
+          {
+            "issue": "HTTP instead of HTTPS detected",
+            "risk_level": "critical",
+            "recommendation": "Enforce HTTPS with HSTS. Redirect all HTTP traffic to HTTPS.",
+            "endpoint": "/api/v1/payments"
+          },
+          {
+            "issue": "Missing Strict-Transport-Security header",
+            "risk_level": "high",
+            "recommendation": "Add Strict-Transport-Security: max-age=31536000; includeSubDomains",
+            "endpoint": "/api/v1/users"
+          },
+          {
+            "issue": "Missing X-Frame-Options header",
+            "risk_level": "medium",
+            "recommendation": "Set X-Frame-Options: DENY to prevent clickjacking.",
+            "endpoint": "/api/v1/dashboard"
+          },
+          {
+            "issue": "Open CORS policy (Access-Control-Allow-Origin: *)",
+            "risk_level": "high",
+            "recommendation": "Restrict CORS to specific trusted origins. Remove wildcard.",
+            "endpoint": "/api/v1/data"
+          },
+          {
+            "issue": "Missing Content-Security-Policy header",
+            "risk_level": "medium",
+            "recommendation": "Implement a strict Content-Security-Policy to prevent XSS.",
+            "endpoint": "/api/v1/reports"
+          }
+        ],
+        "remediation": "Add security header validation to CI/CD pipeline. Use infrastructure-as-code with security baselines. Automate configuration scanning.",
+        "gdpr_articles": [
+          "Article 25 \u2014 Data Protection by Design and by Default",
+          "Article 32(1)(a) \u2014 Encryption of personal data",
+          "Article 32(1)(b) \u2014 Ongoing confidentiality, integrity, availability"
+        ]
+      },
+      {
+        "requirement_id": "2.2.7",
+        "title": "All non-console administrative access is encrypted",
+        "description": "API administrative interfaces must be encrypted and properly configured.",
+        "owasp_category": "API8:2023",
+        "status": "FAIL",
+        "evidence": "DevPulse DAST scan detected 5 finding(s) related to API8:2023 (Security Misconfiguration).",
+        "findings": [
+          {
+            "issue": "HTTP instead of HTTPS detected",
+            "risk_level": "critical",
+            "recommendation": "Enforce HTTPS with HSTS. Redirect all HTTP traffic to HTTPS.",
+            "endpoint": "/api/v1/payments"
+          },
+          {
+            "issue": "Missing Strict-Transport-Security header",
+            "risk_level": "high",
+            "recommendation": "Add Strict-Transport-Security: max-age=31536000; includeSubDomains",
+            "endpoint": "/api/v1/users"
+          },
+          {
+            "issue": "Missing X-Frame-Options header",
+            "risk_level": "medium",
+            "recommendation": "Set X-Frame-Options: DENY to prevent clickjacking.",
+            "endpoint": "/api/v1/dashboard"
+          },
+          {
+            "issue": "Open CORS policy (Access-Control-Allow-Origin: *)",
+            "risk_level": "high",
+            "recommendation": "Restrict CORS to specific trusted origins. Remove wildcard.",
+            "endpoint": "/api/v1/data"
+          },
+          {
+            "issue": "Missing Content-Security-Policy header",
+            "risk_level": "medium",
+            "recommendation": "Implement a strict Content-Security-Policy to prevent XSS.",
+            "endpoint": "/api/v1/reports"
+          }
+        ],
+        "remediation": "Enforce TLS for all admin APIs. Disable plaintext HTTP administrative access. Implement certificate pinning where appropriate.",
+        "gdpr_articles": [
+          "Article 25 \u2014 Data Protection by Design and by Default",
+          "Article 32(1)(a) \u2014 Encryption of personal data",
+          "Article 32(1)(b) \u2014 Ongoing confidentiality, integrity, availability"
+        ]
+      },
+      {
+        "requirement_id": "6.3.2",
+        "title": "An inventory of bespoke and custom software is maintained",
+        "description": "Server and technology disclosure headers reveal software inventory to attackers. Shadow APIs bypass security controls.",
+        "owasp_category": "API9:2023",
+        "status": "WARN",
+        "evidence": "DevPulse DAST scan detected 2 finding(s) related to API9:2023 (Improper Inventory Management).",
+        "findings": [
+          {
+            "issue": "Server header exposes version: nginx/1.18.0",
+            "risk_level": "low",
+            "recommendation": "Remove or obscure Server header in nginx configuration.",
+            "endpoint": "/api/v1/health"
+          },
+          {
+            "issue": "X-Powered-By header exposes: Express 4.18.2",
+            "risk_level": "low",
+            "recommendation": "Remove X-Powered-By header via app.disable('x-powered-by').",
+            "endpoint": "/api/v1/auth"
+          }
+        ],
+        "remediation": "Remove Server and X-Powered-By headers. Maintain a comprehensive API inventory. Decommission deprecated endpoints. Implement API versioning.",
+        "gdpr_articles": [
+          "Article 30 \u2014 Records of Processing Activities",
+          "Article 32 \u2014 Security of Processing"
+        ]
+      },
+      {
+        "requirement_id": "12.3.1",
+        "title": "Each PCI DSS requirement is managed according to a targeted risk analysis",
+        "description": "Technology disclosure and shadow APIs must be assessed as part of risk management.",
+        "owasp_category": "API9:2023",
+        "status": "WARN",
+        "evidence": "DevPulse DAST scan detected 2 finding(s) related to API9:2023 (Improper Inventory Management).",
+        "findings": [
+          {
+            "issue": "Server header exposes version: nginx/1.18.0",
+            "risk_level": "low",
+            "recommendation": "Remove or obscure Server header in nginx configuration.",
+            "endpoint": "/api/v1/health"
+          },
+          {
+            "issue": "X-Powered-By header exposes: Express 4.18.2",
+            "risk_level": "low",
+            "recommendation": "Remove X-Powered-By header via app.disable('x-powered-by').",
+            "endpoint": "/api/v1/auth"
+          }
+        ],
+        "remediation": "Document all API endpoints. Conduct regular API discovery scans. Implement API lifecycle management.",
+        "gdpr_articles": [
+          "Article 30 \u2014 Records of Processing Activities",
+          "Article 32 \u2014 Security of Processing"
+        ]
+      },
+      {
+        "requirement_id": "11.3.1",
+        "title": "Vulnerabilities are managed by risk ranking",
+        "description": "Undocumented APIs are not included in vulnerability management, creating blind spots.",
+        "owasp_category": "API9:2023",
+        "status": "WARN",
+        "evidence": "DevPulse DAST scan detected 2 finding(s) related to API9:2023 (Improper Inventory Management).",
+        "findings": [
+          {
+            "issue": "Server header exposes version: nginx/1.18.0",
+            "risk_level": "low",
+            "recommendation": "Remove or obscure Server header in nginx configuration.",
+            "endpoint": "/api/v1/health"
+          },
+          {
+            "issue": "X-Powered-By header exposes: Express 4.18.2",
+            "risk_level": "low",
+            "recommendation": "Remove X-Powered-By header via app.disable('x-powered-by').",
+            "endpoint": "/api/v1/auth"
+          }
+        ],
+        "remediation": "Include all discovered APIs in vulnerability scanning. Prioritize shadow API discovery. Use DevPulse Shadow API Discovery for continuous monitoring.",
+        "gdpr_articles": [
+          "Article 30 \u2014 Records of Processing Activities",
+          "Article 32 \u2014 Security of Processing"
+        ]
+      },
+      {
+        "requirement_id": "2.4.1",
+        "title": "System configuration standards are updated",
+        "description": "API inventory must be kept current with configuration standards.",
+        "owasp_category": "API9:2023",
+        "status": "WARN",
+        "evidence": "DevPulse DAST scan detected 2 finding(s) related to API9:2023 (Improper Inventory Management).",
+        "findings": [
+          {
+            "issue": "Server header exposes version: nginx/1.18.0",
+            "risk_level": "low",
+            "recommendation": "Remove or obscure Server header in nginx configuration.",
+            "endpoint": "/api/v1/health"
+          },
+          {
+            "issue": "X-Powered-By header exposes: Express 4.18.2",
+            "risk_level": "low",
+            "recommendation": "Remove X-Powered-By header via app.disable('x-powered-by').",
+            "endpoint": "/api/v1/auth"
+          }
+        ],
+        "remediation": "Automate API inventory updates. Track API changes through version control. Maintain living API documentation.",
+        "gdpr_articles": [
+          "Article 30 \u2014 Records of Processing Activities",
+          "Article 32 \u2014 Security of Processing"
+        ]
+      },
+      {
+        "requirement_id": "6.2.4",
+        "title": "Software development practices prevent introduction of security vulnerabilities",
+        "description": "Trusting third-party API responses without validation introduces injection vulnerabilities and data integrity issues.",
+        "owasp_category": "API10:2023",
+        "status": "PASS",
+        "evidence": "DevPulse DAST scan found no violations of this requirement.",
+        "findings": [],
+        "remediation": "Validate and sanitize all third-party API responses. Implement schema validation. Use prepared statements for data persistence. Treat external API data as untrusted input.",
+        "gdpr_articles": [
+          "Article 28 \u2014 Processor",
+          "Article 32(1)(b) \u2014 Ongoing confidentiality, integrity, availability",
+          "Article 44 \u2014 General principle for transfers"
+        ]
+      },
+      {
+        "requirement_id": "6.3.1",
+        "title": "Security vulnerabilities are identified and addressed",
+        "description": "Third-party API integrations must be included in security testing scope.",
+        "owasp_category": "API10:2023",
+        "status": "PASS",
+        "evidence": "DevPulse DAST scan found no violations of this requirement.",
+        "findings": [],
+        "remediation": "Include third-party API integrations in SAST/DAST testing. Monitor for changes in third-party API schemas. Implement contract testing.",
+        "gdpr_articles": [
+          "Article 28 \u2014 Processor",
+          "Article 32(1)(b) \u2014 Ongoing confidentiality, integrity, availability",
+          "Article 44 \u2014 General principle for transfers"
+        ]
+      },
+      {
+        "requirement_id": "12.3.1",
+        "title": "Each PCI DSS requirement is managed according to a targeted risk analysis",
+        "description": "Third-party API dependencies must be assessed for security risk.",
+        "owasp_category": "API10:2023",
+        "status": "PASS",
+        "evidence": "DevPulse DAST scan found no violations of this requirement.",
+        "findings": [],
+        "remediation": "Conduct security assessments of all third-party API integrations. Implement API dependency risk scoring. Monitor for third-party API security advisories.",
+        "gdpr_articles": [
+          "Article 28 \u2014 Processor",
+          "Article 32(1)(b) \u2014 Ongoing confidentiality, integrity, availability",
+          "Article 44 \u2014 General principle for transfers"
+        ]
+      }
+    ]
+  },
+  "gdpr": {
+    "regulation": "EU GDPR 2016/679",
+    "checks": [
+      {
+        "article": "Article 5(1)(b)",
+        "title": "Purpose Limitation",
+        "status": "FAIL",
+        "evidence": "1 finding(s) detected related to 'Purpose Limitation': Excessive data exposure: full user object returned including password hash",
+        "remediation": "Audit all API endpoints to ensure personal data is only used for its stated purpose. Implement data usage logging."
+      },
+      {
+        "article": "Article 5(1)(c)",
+        "title": "Data Minimisation",
+        "status": "FAIL",
+        "evidence": "1 finding(s) detected related to 'Data Minimisation': Excessive data exposure: full user object returned including password hash",
+        "remediation": "Implement response filtering. Return only required fields. Audit API response schemas."
+      },
+      {
+        "article": "Article 5(1)(f)",
+        "title": "Integrity and Confidentiality",
+        "status": "FAIL",
+        "evidence": "1 finding(s) detected related to 'Integrity and Confidentiality': Missing rate limiting on authentication endpoint",
+        "remediation": "Implement encryption, access controls, and integrity checks on all personal data processing endpoints."
+      },
+      {
+        "article": "Article 17",
+        "title": "Right to Erasure",
+        "status": "PASS",
+        "evidence": "No violations detected for Right to Erasure.",
+        "remediation": null
+      },
+      {
+        "article": "Article 25",
+        "title": "Data Protection by Design",
+        "status": "PASS",
+        "evidence": "No violations detected for Data Protection by Design.",
+        "remediation": null
+      },
+      {
+        "article": "Article 30",
+        "title": "Records of Processing Activities",
+        "status": "PASS",
+        "evidence": "No violations detected for Records of Processing Activities.",
+        "remediation": null
+      },
+      {
+        "article": "Article 32(1)(a)",
+        "title": "Encryption and Pseudonymisation",
+        "status": "FAIL",
+        "evidence": "1 finding(s) detected related to 'Encryption and Pseudonymisation': HTTP instead of HTTPS detected",
+        "remediation": "Enforce TLS 1.2+ on all API endpoints. Implement HSTS. Use pseudonymisation for personal data in non-production environments."
+      },
+      {
+        "article": "Article 32(1)(b)",
+        "title": "Ongoing Confidentiality, Integrity, Availability",
+        "status": "PASS",
+        "evidence": "No violations detected for Ongoing Confidentiality, Integrity, Availability.",
+        "remediation": null
+      },
+      {
+        "article": "Article 32(1)(c)",
+        "title": "Restore Availability",
+        "status": "PASS",
+        "evidence": "No violations detected for Restore Availability.",
+        "remediation": null
+      },
+      {
+        "article": "Article 33",
+        "title": "Breach Notification",
+        "status": "PASS",
+        "evidence": "No violations detected for Breach Notification.",
+        "remediation": null
+      },
+      {
+        "article": "Article 35",
+        "title": "Data Protection Impact Assessment",
+        "status": "PASS",
+        "evidence": "No violations detected for Data Protection Impact Assessment.",
+        "remediation": null
+      }
+    ],
+    "overall_status": "FAIL"
+  },
+  "attestation": {
+    "tool": "DevPulse API Security Scanner",
+    "version": "1.0.0",
+    "scan_method": "Continuous DAST (Dynamic Application Security Testing)",
+    "note": "This report is generated from automated security scanning. For formal PCI DSS certification, engage a Qualified Security Assessor (QSA). This report provides evidence for your QSA engagement."
+  }
+}

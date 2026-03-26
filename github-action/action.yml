@@ -1,0 +1,44 @@
+name: "DevPulse API Security Scan"
+description: "Scan API endpoints for security vulnerabilities and detect secrets in code changes"
+branding:
+  icon: "shield"
+  color: "orange"
+
+inputs:
+  devpulse-api-url:
+    description: "DevPulse backend API URL"
+    required: true
+  devpulse-api-key:
+    description: "DevPulse API key for authentication"
+    required: true
+  github-token:
+    description: "GitHub token for PR comments"
+    required: false
+    default: ${{ github.token }}
+  fail-on-critical:
+    description: "Fail the build if critical issues are found"
+    required: false
+    default: "true"
+  scan-secrets:
+    description: "Enable local secret detection in changed files"
+    required: false
+    default: "true"
+  endpoint-patterns:
+    description: "Comma-separated regex patterns to extract API endpoints from code"
+    required: false
+    default: ""
+
+outputs:
+  scan-result:
+    description: "JSON scan result summary"
+    value: ${{ steps.scan.outputs.result }}
+  critical-count:
+    description: "Number of critical issues found"
+    value: ${{ steps.scan.outputs.critical-count }}
+  high-count:
+    description: "Number of high severity issues found"
+    value: ${{ steps.scan.outputs.high-count }}
+
+runs:
+  using: "node20"
+  main: "scan.js"

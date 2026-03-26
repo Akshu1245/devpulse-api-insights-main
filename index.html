@@ -77,34 +77,8 @@
       }
     </script>
 
-    <!-- ── Inline critical CSS for zero-flash dark background ── -->
-    <style>
-      html, body, #root {
-        background-color: #0b1220;
-        margin: 0;
-        padding: 0;
-        min-height: 100vh;
-        /* GPU-accelerated rendering */
-        -webkit-font-smoothing: antialiased;
-        -moz-osx-font-smoothing: grayscale;
-        text-rendering: optimizeSpeed;
-      }
-      /* Prevent layout shift during load */
-      #root {
-        display: flex;
-        flex-direction: column;
-      }
-      /* Instant button feedback */
-      button, [role="button"], a {
-        cursor: pointer;
-        -webkit-tap-highlight-color: transparent;
-        touch-action: manipulation;
-      }
-      /* GPU-accelerate all transitions */
-      * {
-        box-sizing: border-box;
-      }
-    </style>
+    <!-- Critical CSS for zero-flash dark background -->
+    <link rel="stylesheet" href="/critical.css" />
   </head>
 
   <body>
@@ -112,6 +86,3 @@
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
-  </body>
-</html>
-

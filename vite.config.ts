@@ -52,8 +52,8 @@ export default defineConfig({
   build: {
     target: "esnext",
     minify: "esbuild",
-    // Enable CSS code splitting
-    cssCodeSplit: true,
+    // CSS code splitting disabled to avoid Vite 5 html-proxy bug with inline styles
+    cssCodeSplit: false,
     // Inline small assets directly
     assetsInlineLimit: 4096,
     rollupOptions: {
@@ -132,11 +132,6 @@ export default defineConfig({
     // Faster transforms
     target: "esnext",
     // Minify identifiers in production
-    minifyIdentifiers: process.env.NODE_ENV === "production",
-    minifySyntax: process.env.NODE_ENV === "production",
-    minifyWhitespace: process.env.NODE_ENV === "production",
-  },
-});
     minifyIdentifiers: process.env.NODE_ENV === "production",
     minifySyntax: process.env.NODE_ENV === "production",
     minifyWhitespace: process.env.NODE_ENV === "production",

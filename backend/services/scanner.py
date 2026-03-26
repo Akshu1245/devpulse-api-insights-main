@@ -33,7 +33,9 @@ def _headers_dict(response: httpx.Response) -> dict[str, str]:
     return {k.lower(): v for k, v in response.headers.items()}
 
 
-def analyze_response(url: str, method: str, response: httpx.Response | None, error: str | None) -> list[SecurityIssue]:
+def analyze_response(
+    url: str, method: str, response: httpx.Response | None, error: str | None
+) -> list[SecurityIssue]:
     issues: list[SecurityIssue] = []
     parsed = urlparse(url)
 
@@ -76,7 +78,7 @@ def analyze_response(url: str, method: str, response: httpx.Response | None, err
             SecurityIssue(
                 issue="Missing X-Content-Type-Options header",
                 risk_level="medium",
-                recommendation='Set X-Content-Type-Options: nosniff.',
+                recommendation="Set X-Content-Type-Options: nosniff.",
                 methods={method},
             )
         )
@@ -150,14 +152,20 @@ def merge_issues(by_method: dict[str, list[SecurityIssue]]) -> list[dict[str, An
                 )
             cur = merged[k]
             cur.methods.add(method)
-            if SEVERITY_ORDER.get(it.risk_level, 0) > SEVERITY_ORDER.get(cur.risk_level, 0):
+            if SEVERITY_ORDER.get(it.risk_level, 0) > SEVERITY_ORDER.get(
+                cur.risk_level, 0
+            ):
                 cur.risk_level = it.risk_level
                 cur.recommendation = it.recommendation
 
     out: list[dict[str, Any]] = []
     for it in merged.values():
         methods = sorted(it.methods)
-        method_label = ",".join(methods) if len(methods) > 1 else (methods[0] if methods else "GET")
+        method_label = (
+            ",".join(methods)
+            if len(methods) > 1
+            else (methods[0] if methods else "GET")
+        )
         out.append(
             {
                 "issue": it.issue,

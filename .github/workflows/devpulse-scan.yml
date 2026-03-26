@@ -1,0 +1,65 @@
+name: DevPulse API Security Scan
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    paths:
+      - "src/**"
+      - "backend/**"
+      - "supabase/**"
+      - "**/*.ts"
+      - "**/*.tsx"
+      - "**/*.js"
+      - "**/*.py"
+      - "**/*.json"
+      - "**/*.yaml"
+      - "**/*.yml"
+      - "**/*.env*"
+
+permissions:
+  contents: read
+  pull-requests: write
+
+concurrency:
+  group: devpulse-scan-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  security-scan:
+    name: API Security Scan
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Run DevPulse Security Scan
+        id: scan
+        env:
+          INPUT_DEVPULSE_API_URL: ${{ secrets.DEVPULSE_API_URL }}
+          INPUT_DEVPULSE_API_KEY: ${{ secrets.DEVPULSE_API_KEY }}
+          INPUT_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          INPUT_FAIL_ON_CRITICAL: "true"
+          INPUT_SCAN_SECRETS: "true"
+          GITHUB_BASE_REF: ${{ github.event.pull_request.base.ref }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: node github-action/scan.js
+
+      - name: Upload scan results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: devpulse-scan-results
+          path: scan-results.json
+          if-no-files-found: ignore
+          retention-days: 30

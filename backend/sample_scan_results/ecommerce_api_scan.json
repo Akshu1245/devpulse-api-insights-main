@@ -1,0 +1,113 @@
+{
+  "target_url": "https://shop-api.example.com/api/orders/5678",
+  "scan_id": "scan_a3d5f7g8-4d3e-11ef-9a1b-0242ac120002",
+  "timestamp": "2026-03-25T14:29:01.998047+00:00",
+  "scan_duration_ms": 5234.89,
+  "total_findings": 8,
+  "summary": {
+    "severity_counts": {
+      "CRITICAL": 2,
+      "HIGH": 3,
+      "MEDIUM": 2,
+      "LOW": 1
+    },
+    "owasp_categories_detected": [
+      "Broken Object Level Authorization",
+      "Broken Authentication",
+      "Mass Assignment",
+      "Security Misconfiguration",
+      "Injection"
+    ],
+    "risk_score": 82
+  },
+  "findings": [
+    {
+      "owasp_category": "Broken Object Level Authorization",
+      "owasp_id": "API1:2023",
+      "title": "Sequential ID Enumeration Possible",
+      "severity": "MEDIUM",
+      "description": "Sequential resource IDs (5679, 5680, 5681) all return HTTP 200. The API uses predictable sequential IDs without adequate access control, enabling enumeration attacks where attackers can discover all order IDs.",
+      "evidence": "GET /api/orders/5681 → 3/3 sequential IDs returned 200",
+      "recommendation": "Use UUIDs or other non-sequential identifiers. Implement rate limiting on resource access and monitor for enumeration patterns.",
+      "cwe": "CWE-639",
+      "cvss": 5.3
+    },
+    {
+      "owasp_category": "Broken Authentication",
+      "owasp_id": "API2:2023",
+      "title": "Authentication Token in URL Query Parameter",
+      "severity": "HIGH",
+      "description": "The URL contains authentication-related query parameters (token/api_key). Tokens in URLs are logged in server logs, browser history, and referrer headers, potentially exposing them to attackers.",
+      "evidence": "URL: https://shop-api.example.com/api/orders/5678?api_key=sk_live_...",
+      "recommendation": "Pass authentication tokens in the Authorization header, not in URL query parameters. This prevents token leakage through logs and referrer headers.",
+      "cwe": "CWE-598",
+      "cvss": 7.5
+    },
+    {
+      "owasp_category": "Broken Authentication",
+      "owasp_id": "API2:2023",
+      "title": "Insecure Session Cookie Configuration",
+      "severity": "MEDIUM",
+      "description": "Set-Cookie header is missing security flags: HttpOnly, Secure, SameSite. This makes cookies vulnerable to XSS and CSRF attacks.",
+      "evidence": "Set-Cookie: session=abc123; Path=/",
+      "recommendation": "Set HttpOnly, Secure, and SameSite=Strict (or Lax) flags on all authentication/session cookies.",
+      "cwe": "CWE-614",
+      "cvss": 5.4
+    },
+    {
+      "owasp_category": "Mass Assignment",
+      "owasp_id": "API3:2023",
+      "title": "Price/Amount Manipulation via Mass Assignment (POST)",
+      "severity": "CRITICAL",
+      "description": "The API accepted injected financial fields via POST. This could allow price manipulation attacks where attackers set their own prices for purchases, potentially resulting in significant financial loss.",
+      "evidence": "Reflected fields: ['price=0.01', 'total=0.01', 'discount=100']",
+      "recommendation": "Financial fields (price, amount, cost) must be computed server-side. Never accept pricing data from client input. Use allowlists for accepted fields.",
+      "cwe": "CWE-915",
+      "cvss": 9.8
+    },
+    {
+      "owasp_category": "Mass Assignment",
+      "owasp_id": "API3:2023",
+      "title": "Read-Only Fields Modified via PUT",
+      "severity": "HIGH",
+      "description": "The API accepted and reflected read-only fields that should be server-controlled: id, created_at, user_id. This could allow attackers to manipulate audit trails and ownership.",
+      "evidence": "Modified read-only fields: ['id=INJECTED_ID_12345', 'created_at=2000-01-01T00:00:00Z']",
+      "recommendation": "Strip read-only fields (id, created_at, user_id, etc.) from update requests. Validate that only updatable fields are processed.",
+      "cwe": "CWE-915",
+      "cvss": 7.5
+    },
+    {
+      "owasp_category": "Injection",
+      "owasp_id": "API8:2023",
+      "title": "SQL Injection in Query Parameter",
+      "severity": "CRITICAL",
+      "description": "The API appears vulnerable to SQL injection via query parameters. Payload ' OR '1'='1' --' triggered an error response indicating unsanitized database queries.",
+      "evidence": "Error patterns found: ['SQL syntax', 'near \\'\\' OR', 'unclosed quotation']",
+      "recommendation": "Use parameterized queries or prepared statements. Never concatenate user input into SQL queries. Implement input validation and sanitization.",
+      "cwe": "CWE-89",
+      "cvss": 9.8
+    },
+    {
+      "owasp_category": "Security Misconfiguration",
+      "owasp_id": "API8:2023",
+      "title": "Server Header Exposes Technology Information",
+      "severity": "LOW",
+      "description": "The 'server' response header reveals server technology: 'nginx/1.18.0'. This helps attackers target known vulnerabilities for this specific version.",
+      "evidence": "server: nginx/1.18.0",
+      "recommendation": "Remove or genericize the 'server' header in production.",
+      "cwe": "CWE-200",
+      "cvss": 3.1
+    },
+    {
+      "owasp_category": "Security Misconfiguration",
+      "owasp_id": "API8:2023",
+      "title": "Open Redirect via 'redirect' Parameter",
+      "severity": "MEDIUM",
+      "description": "The API redirects to unvalidated URLs supplied via the 'redirect' query parameter. This can be used for phishing attacks where users are redirected to malicious sites.",
+      "evidence": "GET /api/orders/5678?redirect=https://evil.com/phishing → Redirect to https://evil.com/phishing",
+      "recommendation": "Validate redirect URLs against an allowlist. Never redirect to external URLs supplied by the client.",
+      "cwe": "CWE-601",
+      "cvss": 6.1
+    }
+  ]
+}

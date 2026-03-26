@@ -7,6 +7,9 @@ from decimal import Decimal
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel, Field
 
+from services.alert_config import get_user_config
+from services.alert_dispatcher import ChannelConfig, dispatch_alert_background
+from services.alert_rules import CostSpikeRuleConfig, evaluate_cost_spike
 from services.auth_guard import assert_same_user, get_current_user_id
 from services.supabase_client import supabase
 
@@ -24,6 +27,67 @@ def _parse_ts(s: str) -> datetime:
     return datetime.fromisoformat(s.replace("Z", "+00:00"))
 
 
+def _fire_cost_spike_alerts(
+    user_id: str, cost_inr: float, model: str, tokens_used: int
+) -> None:
+    """Evaluate cost against thresholds and dispatch notifications."""
+    cfg = get_user_config(user_id)
+    if not cfg.get("enabled"):
+        return
+
+    # Compute today's total from llm_usage
+    today = date.today()
+    res = (
+        supabase.table("llm_usage")
+        .select("cost_inr, recorded_at")
+        .eq("user_id", user_id)
+        .execute()
+    )
+    daily_total = 0.0
+    for r in res.data or []:
+        ts = r.get("recorded_at")
+        if not ts:
+            continue
+        try:
+            d = _parse_ts(ts).date()
+            if d == today:
+                daily_total += float(r.get("cost_inr") or 0)
+        except Exception:
+            continue
+
+    rule_cfg = CostSpikeRuleConfig(
+        daily_threshold_inr=cfg.get("cost_daily_threshold_inr", 500.0),
+        single_entry_threshold_inr=cfg.get("cost_single_entry_threshold_inr", 100.0),
+        hourly_rate_multiplier=cfg.get("cost_hourly_rate_multiplier", 3.0),
+    )
+    alert_events = evaluate_cost_spike(
+        user_id=user_id,
+        cost_inr=cost_inr,
+        model=model,
+        tokens_used=tokens_used,
+        daily_total_inr=daily_total,
+        config=rule_cfg,
+    )
+    if not alert_events:
+        return
+
+    channels = [
+        ChannelConfig(
+            channel=ch["channel"],
+            enabled=ch.get("enabled", False),
+            email_to=ch.get("email_to"),
+            slack_webhook_url=ch.get("slack_webhook_url"),
+        )
+        for ch in cfg.get("channels", [])
+        if ch.get("enabled")
+    ]
+    if not channels:
+        return
+
+    for evt in alert_events:
+        dispatch_alert_background(evt, channels)
+
+
 @router.post("/log")
 def log_usage(req: LogRequest, auth_user_id: str = Depends(get_current_user_id)):
     assert_same_user(auth_user_id, req.user_id)
@@ -35,6 +99,10 @@ def log_usage(req: LogRequest, auth_user_id: str = Depends(get_current_user_id))
     }
     res = supabase.table("llm_usage").insert(row).execute()
     data = res.data or []
+
+    # ── Real-time cost spike alert dispatch ──────────────────────────────
+    _fire_cost_spike_alerts(req.user_id, req.cost_inr, req.model, req.tokens_used)
+
     return data[0] if data else row
 
 
@@ -69,7 +137,13 @@ def usage(user_id: str, auth_user_id: str = Depends(get_current_user_id)):
             continue
         daily[d.isoformat()] += float(r.get("cost_inr") or 0)
 
-    daily_list = [{"date": (start + timedelta(days=i)).isoformat(), "cost": round(daily[(start + timedelta(days=i)).isoformat()], 4)} for i in range(30)]
+    daily_list = [
+        {
+            "date": (start + timedelta(days=i)).isoformat(),
+            "cost": round(daily[(start + timedelta(days=i)).isoformat()], 4),
+        }
+        for i in range(30)
+    ]
 
     breakdown = [
         {"model": m, "total_cost_inr": round(v, 4), "total_tokens": tokens_by_model[m]}
@@ -120,7 +194,13 @@ def summary(user_id: str, auth_user_id: str = Depends(get_current_user_id)):
         if start <= d <= today:
             daily[d.isoformat()] += float(r.get("cost_inr") or 0)
 
-    daily_list = [{"date": (start + timedelta(days=i)).isoformat(), "cost": round(daily[(start + timedelta(days=i)).isoformat()], 4)} for i in range(30)]
+    daily_list = [
+        {
+            "date": (start + timedelta(days=i)).isoformat(),
+            "cost": round(daily[(start + timedelta(days=i)).isoformat()], 4),
+        }
+        for i in range(30)
+    ]
 
     return {
         "total_tokens": total_tokens,

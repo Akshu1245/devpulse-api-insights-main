@@ -1,0 +1,54 @@
+{
+  "target_url": "https://secure-api.example.com/v1/users/abc-123-def",
+  "scan_id": "scan_9c2b4e6f-4d3e-11ef-9a1b-0242ac120002",
+  "timestamp": "2026-03-25T14:29:01.998047+00:00",
+  "scan_duration_ms": 3891.23,
+  "total_findings": 3,
+  "summary": {
+    "severity_counts": {
+      "CRITICAL": 0,
+      "HIGH": 0,
+      "MEDIUM": 2,
+      "LOW": 1
+    },
+    "owasp_categories_detected": [
+      "Security Misconfiguration"
+    ],
+    "risk_score": 18
+  },
+  "findings": [
+    {
+      "owasp_category": "Security Misconfiguration",
+      "owasp_id": "API8:2023",
+      "title": "Missing X-XSS-Protection Header",
+      "severity": "LOW",
+      "description": "Legacy XSS protection header is not set.",
+      "evidence": "Header 'x-xss-protection' not present in response",
+      "recommendation": "Set X-XSS-Protection: 1; mode=block (or rely on CSP).",
+      "cwe": "CWE-79",
+      "cvss": 3.1
+    },
+    {
+      "owasp_category": "Security Misconfiguration",
+      "owasp_id": "API8:2023",
+      "title": "Missing Permissions-Policy Header",
+      "severity": "LOW",
+      "description": "No Permissions-Policy means browser features are unrestricted.",
+      "evidence": "Header 'permissions-policy' not present in response",
+      "recommendation": "Set Permissions-Policy to restrict unused browser features.",
+      "cwe": "CWE-693",
+      "cvss": 3.1
+    },
+    {
+      "owasp_category": "Security Misconfiguration",
+      "owasp_id": "API8:2023",
+      "title": "No Rate Limit Headers Present",
+      "severity": "MEDIUM",
+      "description": "The API response does not include any rate limiting headers (X-RateLimit-*, Ratelimit-*). This makes it difficult for clients to understand their usage limits.",
+      "evidence": "No rate limit headers found in response",
+      "recommendation": "Implement rate limiting and expose limits via standard headers: X-RateLimit-Limit, X-RateLimit-Remaining, X-RateLimit-Reset.",
+      "cwe": "CWE-770",
+      "cvss": 5.3
+    }
+  ]
+}
