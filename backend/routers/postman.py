@@ -1,19 +1,34 @@
-"""
-Postman Collection Import Router — DevPulse
+﻿"""
+Postman Collection Import Router â€” DevPulse
 Handles Postman Collection v2.1 JSON upload, credential detection,
 and triggers the full scanning pipeline on extracted endpoints.
 """
 
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, HTTPException
+import logging
+
+from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from typing import Any
 
 from services.auth_guard import get_current_user_id
+from services.error_handler import (
+    log_route_error,
+    safe_db_call,
+    validate_postman_collection,
+)
 from services.postman_parser import parse_postman_collection
+from services.rate_limiter import (
+    MAX_ENDPOINTS_PER_SCAN,
+    check_endpoint_count,
+    check_postman_rate_limit,
+)
 from services.scan_pipeline import run_scan_pipeline
 from services.supabase_client import supabase
+
+_log = logging.getLogger("devpulse")
 
 router = APIRouter(prefix="/postman", tags=["postman"])
 
@@ -28,6 +43,7 @@ class PostmanImportRequest(BaseModel):
 @router.post("/import")
 async def import_postman_collection(
     req: PostmanImportRequest,
+    request: Request,
     auth_user_id: str = Depends(get_current_user_id),
 ) -> dict[str, Any]:
     """
@@ -37,6 +53,21 @@ async def import_postman_collection(
     if auth_user_id != req.user_id:
         raise HTTPException(status_code=403, detail="Forbidden")
 
+    # Rate limiting
+    ip = request.client.host if request.client else "unknown"
+    rl_error = check_postman_rate_limit(ip=ip, user_id=req.user_id)
+    if rl_error:
+        return JSONResponse(status_code=429, content=rl_error)
+
+    # Validate Postman collection structure before processing
+    validate_postman_collection(req.collection)
+
+    # Endpoint count limit
+    raw_items = req.collection.get("item", [])
+    count_error = check_endpoint_count(len(raw_items), MAX_ENDPOINTS_PER_SCAN)
+    if count_error:
+        return JSONResponse(status_code=400, content=count_error)
+
     # Run the full scan pipeline
     try:
         result = await run_scan_pipeline(
@@ -44,10 +75,18 @@ async def import_postman_collection(
             scan_endpoints=req.scan_endpoints,
             max_http_scans=min(req.max_http_scans, 50),
         )
+    except HTTPException:
+        raise
     except Exception as e:
+        log_route_error("/postman/import", e, {"user_id": req.user_id})
         raise HTTPException(
-            status_code=400, detail=f"Invalid Postman collection: {str(e)}"
-        )
+            status_code=400,
+            detail={
+                "message": f"Invalid Postman collection: {str(e)}",
+                "code": "INVALID_POSTMAN_COLLECTION",
+                "details": {},
+            },
+        ) from e
 
     # Store import record in Supabase
     import_record = {
@@ -58,9 +97,10 @@ async def import_postman_collection(
         "endpoints_with_credentials": result["endpoints_with_secrets"],
     }
     try:
-        supabase.table("postman_imports").insert(import_record).execute()
-    except Exception:
-        pass
+        with safe_db_call("insert postman_imports"):
+            supabase.table("postman_imports").insert(import_record).execute()
+    except HTTPException:
+        pass  # DB error logged; import result still returned
 
     # Store individual scan results for high/critical endpoints
     for ep in result.get("endpoints", []):
@@ -68,17 +108,18 @@ async def import_postman_collection(
             for issue in ep.get("security_issues", []):
                 if issue.get("risk_level") in ("critical", "high"):
                     try:
-                        supabase.table("scan_results").insert(
-                            {
-                                "user_id": req.user_id,
-                                "endpoint": ep["url"],
-                                "method": ep["method"],
-                                "risk_level": issue["risk_level"],
-                                "issue": issue["issue"],
-                                "recommendation": issue["recommendation"],
-                            }
-                        ).execute()
-                    except Exception:
+                        with safe_db_call("insert scan_results"):
+                            supabase.table("scan_results").insert(
+                                {
+                                    "user_id": req.user_id,
+                                    "endpoint": ep["url"],
+                                    "method": ep["method"],
+                                    "risk_level": issue["risk_level"],
+                                    "issue": issue["issue"],
+                                    "recommendation": issue["recommendation"],
+                                }
+                            ).execute()
+                    except HTTPException:
                         pass
 
     # Build alert if secrets are found
@@ -106,6 +147,7 @@ async def import_postman_collection(
 @router.post("/parse")
 async def parse_only(
     req: PostmanImportRequest,
+    request: Request,
     auth_user_id: str = Depends(get_current_user_id),
 ) -> dict[str, Any]:
     """
@@ -115,12 +157,29 @@ async def parse_only(
     if auth_user_id != req.user_id:
         raise HTTPException(status_code=403, detail="Forbidden")
 
+    # Rate limiting
+    ip = request.client.host if request.client else "unknown"
+    rl_error = check_postman_rate_limit(ip=ip, user_id=req.user_id)
+    if rl_error:
+        return JSONResponse(status_code=429, content=rl_error)
+
+    # Validate Postman collection structure before processing
+    validate_postman_collection(req.collection)
+
     try:
         parsed = parse_postman_collection(req.collection)
+    except HTTPException:
+        raise
     except Exception as e:
+        log_route_error("/postman/parse", e, {"user_id": req.user_id})
         raise HTTPException(
-            status_code=400, detail=f"Invalid Postman collection: {str(e)}"
-        )
+            status_code=400,
+            detail={
+                "message": f"Invalid Postman collection: {str(e)}",
+                "code": "INVALID_POSTMAN_COLLECTION",
+                "details": {},
+            },
+        ) from e
 
     return {
         "success": True,
@@ -145,14 +204,18 @@ def get_user_imports(
         raise HTTPException(status_code=403, detail="Forbidden")
 
     try:
-        res = (
-            supabase.table("postman_imports")
-            .select("*")
-            .eq("user_id", user_id)
-            .order("created_at", desc=True)
-            .limit(50)
-            .execute()
-        )
-        return {"imports": res.data or []}
+        with safe_db_call("list postman_imports"):
+            res = (
+                supabase.table("postman_imports")
+                .select("*")
+                .eq("user_id", user_id)
+                .order("created_at", desc=True)
+                .limit(50)
+                .execute()
+            )
+        return {"success": True, "data": {"imports": res.data or []}}
+    except HTTPException:
+        raise
     except Exception as e:
-        return {"imports": [], "error": str(e)}
+        log_route_error(f"/postman/imports/{user_id}", e, {"user_id": user_id})
+        return {"success": True, "data": {"imports": []}}

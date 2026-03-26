@@ -11,7 +11,9 @@ import SeoMeta from "@/components/SeoMeta";
 import PerformanceMonitor from "@/components/PerformanceMonitor";
 import SplashScreen from "./components/SplashScreen";
 import { DevPulseIDEProvider } from "@/context/DevPulseIDEContext";
+import { AuthProvider } from "@/context/AuthContext";
 import { usePerformanceOptimizations } from "@/hooks/usePerformanceOptimizations";
+import ProtectedRoute from "@/components/ProtectedRoute";
 
 // Lazy load ALL pages for optimal code splitting
 const Index = lazy(() => import("./pages/Index"));
@@ -62,6 +64,7 @@ const AppRoutes = ({
       {!splashDone && <SplashScreen onComplete={() => setSplashDone(true)} />}
       <Suspense fallback={<PageLoader />}>
         <Routes>
+          {/* ── Public routes ─────────────────────────────────────────── */}
           <Route path="/" element={<Index />} />
           <Route path="/privacy" element={<PrivacyPolicy />} />
           <Route path="/terms" element={<TermsOfService />} />
@@ -70,17 +73,65 @@ const AppRoutes = ({
           <Route path="/api-monitoring-tool" element={<ApiMonitoringTool />} />
           <Route path="/ai-agent-security-platform" element={<AiAgentSecurityPlatform />} />
           <Route path="/api-monitoring-alternatives" element={<ApiMonitoringAlternatives />} />
-          <Route path="/agentguard" element={<AgentGuardGate />} />
-          <Route path="/agentguard/landing" element={<AgentGuardGate />} />
-          <Route path="/devpulse/security" element={<DevPulseSecurityDashboard />} />
+
+          {/* ── Auth routes (public) ───────────────────────────────────── */}
           <Route path="/auth" element={<Auth />} />
-          <Route path="/auth/reset-password" element={<AgentGuardResetPassword />} />
-          {/* Backward-compatible route (single auth UI lives at /auth) */}
+          {/* Backward-compatible alias */}
           <Route path="/agentguard/auth" element={<Auth />} />
-          <Route path="/agentguard/docs" element={<AgentGuardSDKDocs />} />
+          <Route path="/auth/reset-password" element={<AgentGuardResetPassword />} />
           <Route path="/agentguard/reset-password" element={<AgentGuardResetPassword />} />
-          <Route path="/agentguard/agent/:agentId" element={<AgentGuardAgentDetail />} />
-          <Route path="/agentguard/settings" element={<AgentGuardSettings />} />
+
+          {/* ── Protected routes (require login) ──────────────────────── */}
+          <Route
+            path="/agentguard"
+            element={
+              <ProtectedRoute>
+                <AgentGuardGate />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/agentguard/landing"
+            element={
+              <ProtectedRoute>
+                <AgentGuardGate />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/agentguard/docs"
+            element={
+              <ProtectedRoute>
+                <AgentGuardSDKDocs />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/agentguard/agent/:agentId"
+            element={
+              <ProtectedRoute>
+                <AgentGuardAgentDetail />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/agentguard/settings"
+            element={
+              <ProtectedRoute>
+                <AgentGuardSettings />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/devpulse/security"
+            element={
+              <ProtectedRoute>
+                <DevPulseSecurityDashboard />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* ── Catch-all ─────────────────────────────────────────────── */}
           <Route path="*" element={<NotFound />} />
         </Routes>
       </Suspense>
@@ -105,12 +156,16 @@ const App = () => {
         <QueryClientProvider client={queryClient}>
           <TooltipProvider>
             <ErrorBoundary>
-              <PerformanceMonitor />
-              <Toaster />
-              <Sonner />
-              <BrowserRouter>
-                <AppRoutes splashDone={splashDone} setSplashDone={setSplashDone} />
-              </BrowserRouter>
+              {/* AuthProvider must wrap BrowserRouter so ProtectedRoute can
+                  read auth state before any navigation occurs */}
+              <AuthProvider>
+                <PerformanceMonitor />
+                <Toaster />
+                <Sonner />
+                <BrowserRouter>
+                  <AppRoutes splashDone={splashDone} setSplashDone={setSplashDone} />
+                </BrowserRouter>
+              </AuthProvider>
             </ErrorBoundary>
           </TooltipProvider>
         </QueryClientProvider>

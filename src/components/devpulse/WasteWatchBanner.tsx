@@ -9,8 +9,6 @@ import { useCallback, useEffect, useState } from "react";
 import { TrendingDown, X } from "lucide-react";
 import { api } from "@/lib/api";
 
-type Props = { userId: string };
-
 type LLMSummary = {
   total_cost_inr?: number;
 };
@@ -22,7 +20,7 @@ type RiskResult = {
   }>;
 };
 
-export default function WasteWatchBanner({ userId }: Props) {
+export default function WasteWatchBanner() {
   const [wasteAmount, setWasteAmount] = useState<number | null>(null);
   const [dismissed, setDismissed] = useState(false);
   const [loaded, setLoaded] = useState(false);
@@ -30,8 +28,8 @@ export default function WasteWatchBanner({ userId }: Props) {
   const compute = useCallback(async () => {
     try {
       const [llmRes, riskRes] = await Promise.all([
-        api.getLLMSummary(userId) as Promise<LLMSummary>,
-        api.getUnifiedRiskScore(userId) as Promise<RiskResult>,
+        api.getLLMSummary() as Promise<LLMSummary>,
+        api.getUnifiedRiskScore() as Promise<RiskResult>,
       ]);
 
       const totalInr = llmRes?.total_cost_inr ?? 0;
@@ -53,7 +51,7 @@ export default function WasteWatchBanner({ userId }: Props) {
     } finally {
       setLoaded(true);
     }
-  }, [userId]);
+  }, []);
 
   useEffect(() => {
     void compute();

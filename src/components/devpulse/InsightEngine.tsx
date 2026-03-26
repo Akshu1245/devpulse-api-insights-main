@@ -106,9 +106,7 @@ function buildInsights(scores: RiskScore[], llmSummary: LLMSummary | null): Insi
     .slice(0, 3); // Top 3 — noise reduction
 }
 
-type Props = { userId: string };
-
-export default function InsightEngine({ userId }: Props) {
+export default function InsightEngine() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [insights, setInsights] = useState<Insight[]>([]);
@@ -119,8 +117,8 @@ export default function InsightEngine({ userId }: Props) {
     setError(null);
     try {
       const [riskRes, llmRes] = await Promise.all([
-        api.getUnifiedRiskScore(userId) as Promise<{ scores: RiskScore[] }>,
-        api.getLLMSummary(userId) as Promise<LLMSummary>,
+        api.getUnifiedRiskScore() as Promise<{ scores: RiskScore[] }>,
+        api.getLLMSummary() as Promise<LLMSummary>,
       ]);
 
       const scores = riskRes?.scores ?? [];
@@ -132,7 +130,7 @@ export default function InsightEngine({ userId }: Props) {
     } finally {
       setLoading(false);
     }
-  }, [userId]);
+  }, []);
 
   useEffect(() => {
     void load();

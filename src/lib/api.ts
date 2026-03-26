@@ -49,24 +49,24 @@ async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
 
 export const api = {
   // ── Security Scanner ──────────────────────────────────────────────────────
-  scanEndpoint: (endpoint: string, userId: string) =>
+  scanEndpoint: (endpoint: string, method?: string) =>
     apiFetch<{ issues: Array<Record<string, string>>; endpoint: string }>("/scan", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ endpoint, user_id: userId }),
+      body: JSON.stringify({ endpoint, method }),
     }),
 
-  getUserScans: (userId: string) =>
-    apiFetch<{ scans: Array<Record<string, unknown>> }>(`/scans/${encodeURIComponent(userId)}`),
+  getUserScans: () =>
+    apiFetch<{ scans: Array<Record<string, unknown>> }>("/scans"),
 
   // ── LLM Cost Intelligence ─────────────────────────────────────────────────
-  getLLMUsage: (userId: string) =>
-    apiFetch(`/llm/usage/${encodeURIComponent(userId)}`),
+  getLLMUsage: () =>
+    apiFetch("/llm/usage"),
 
-  getLLMSummary: (userId: string) =>
-    apiFetch(`/llm/summary/${encodeURIComponent(userId)}`),
+  getLLMSummary: () =>
+    apiFetch("/llm/summary"),
 
-  logLLMUsage: (data: { user_id: string; model: string; tokens_used: number; cost_inr: number }) =>
+  logLLMUsage: (data: { model: string; tokens_used: number; cost_inr: number }) =>
     apiFetch("/llm/log", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -74,29 +74,29 @@ export const api = {
     }),
 
   // ── Alerts ────────────────────────────────────────────────────────────────
-  getAlerts: (userId: string) =>
-    apiFetch<{ alerts: Array<Record<string, unknown>> }>(`/alerts/${encodeURIComponent(userId)}`),
+  getAlerts: () =>
+    apiFetch<{ alerts: Array<Record<string, unknown>> }>("/alerts"),
 
-  resolveAlert: (alertId: string, userId: string) =>
+  resolveAlert: (alertId: string) =>
     apiFetch(`/alerts/${encodeURIComponent(alertId)}/resolve`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ user_id: userId }),
+      body: JSON.stringify({}),
     }),
 
   // ── Compliance (PCI DSS v4.0.1 + GDPR) — Patent 4 ────────────────────────
-  getCompliance: (userId: string) =>
-    apiFetch<{ checks: Array<Record<string, unknown>> }>(`/compliance/${encodeURIComponent(userId)}`),
+  getCompliance: () =>
+    apiFetch<{ checks: Array<Record<string, unknown>> }>("/compliance"),
 
-  runComplianceCheck: (body: { user_id: string; control_name: string; evidence: string }) =>
+  runComplianceCheck: (body: { control_name: string; evidence: string }) =>
     apiFetch("/compliance/check", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),
     }),
 
-  generateComplianceReport: (userId: string, organizationName?: string, reportType?: string) =>
-    apiFetch(`/compliance/report/${encodeURIComponent(userId)}`, {
+  generateComplianceReport: (organizationName?: string, reportType?: string) =>
+    apiFetch("/compliance/report", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -106,19 +106,15 @@ export const api = {
     }),
 
   // ── Postman Collection Import (Patent 1 — Postman Refugee Engine) ─────────
-  importPostmanCollection: (userId: string, collection: Record<string, unknown>, scanEndpoints = true) =>
+  importPostmanCollection: (collection: Record<string, unknown>, scanEndpoints = true) =>
     apiFetch("/postman/import", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ user_id: userId, collection, scan_endpoints: scanEndpoints }),
+      body: JSON.stringify({ collection, scan_endpoints: scanEndpoints }),
     }),
-
-  getPostmanImports: (userId: string) =>
-    apiFetch(`/postman/imports/${encodeURIComponent(userId)}`),
 
   // ── Thinking Token Attribution (Patent 2) ─────────────────────────────────
   logThinkingTokens: (data: {
-    user_id: string;
     model: string;
     endpoint_name?: string;
     feature_name?: string;
@@ -131,19 +127,18 @@ export const api = {
       body: JSON.stringify(data),
     }),
 
-  getThinkingTokenStats: (userId: string) =>
-    apiFetch(`/thinking-tokens/stats/${encodeURIComponent(userId)}`),
+  getThinkingTokenStats: () =>
+    apiFetch("/thinking-tokens/stats"),
 
-  analyzeThinkingEfficiency: (userId: string) =>
-    apiFetch(`/thinking-tokens/analyze/${encodeURIComponent(userId)}`),
+  analyzeThinkingEfficiency: () =>
+    apiFetch("/thinking-tokens/analyze"),
 
   // ── Unified Risk Score (Patent 1 Core) ────────────────────────────────────
-  getUnifiedRiskScore: (userId: string) =>
-    apiFetch(`/scan/risk-score/${encodeURIComponent(userId)}`),
+  getUnifiedRiskScore: () =>
+    apiFetch("/scan/risk-score"),
 
   // ── Shadow API Discovery (Patent 3) ───────────────────────────────────────
   discoverShadowApis: (data: {
-    user_id: string;
     project_name: string;
     source_code_routes: Array<{ file: string; route: string; method: string; framework: string }>;
     observed_traffic: Array<{ path: string; method: string; count: number; last_seen: string }>;
@@ -154,16 +149,17 @@ export const api = {
       body: JSON.stringify(data),
     }),
 
-  getShadowApiInventory: (userId: string) =>
-    apiFetch(`/shadow-api/inventory/${encodeURIComponent(userId)}`),
+  getShadowApiInventory: () =>
+    apiFetch("/shadow-api/inventory"),
 
-  getShadowApiStats: (userId: string) =>
-    apiFetch(`/shadow-api/stats/${encodeURIComponent(userId)}`),
+  getShadowApiStats: () =>
+    apiFetch("/shadow-api/stats"),
 
-  resolveShadowApi: (endpointId: string, userId: string, resolution: string) =>
+  resolveShadowApi: (endpointId: string, resolution: string) =>
     apiFetch(`/shadow-api/resolve/${encodeURIComponent(endpointId)}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ user_id: userId, resolution }),
+      body: JSON.stringify({ resolution }),
     }),
 };
+

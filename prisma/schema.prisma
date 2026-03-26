@@ -8,13 +8,19 @@ datasource db {
 }
 
 model User {
-  id               String     @id @default(cuid())
-  clerkId          String     @unique
-  email            String     @unique
-  plan             Plan       @default(FREE)
-  stripeCustomerId String?    @unique
-  briefings        Briefing[]
-  createdAt        DateTime   @default(now())
+  id                 String              @id @default(cuid())
+  clerkId            String?             @unique
+  email              String              @unique
+  password           String?
+  plan               Plan                @default(FREE)
+  stripeCustomerId   String?             @unique
+  briefings          Briefing[]
+  scans              Scan[]
+  alerts             Alert[]
+  llmUsage           LLMUsage[]
+  complianceChecks   ComplianceCheck[]
+  thinkingTokenLogs  ThinkingTokenLog[]
+  createdAt          DateTime            @default(now())
 }
 
 model Briefing {
@@ -24,6 +30,76 @@ model Briefing {
   topic     String
   content   Json
   createdAt DateTime @default(now())
+}
+
+model Scan {
+  id             String          @id @default(cuid())
+  userId         String
+  user           User            @relation(fields: [userId], references: [id])
+  endpoint       String
+  method         String          @default("GET")
+  riskLevel      String
+  issue          String
+  recommendation String
+  scannedAt      DateTime        @default(now())
+  vulnerabilities Vulnerability[]
+}
+
+model Vulnerability {
+  id           String   @id @default(cuid())
+  scanId       String
+  scan         Scan     @relation(fields: [scanId], references: [id])
+  type         String
+  severity     String
+  description  String
+  remediation  String
+  detectedAt   DateTime @default(now())
+}
+
+model Alert {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+  severity    String
+  description String
+  endpoint    String
+  resolved    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  resolvedAt  DateTime?
+}
+
+model LLMUsage {
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id])
+  model      String
+  tokensUsed Int
+  costInr    Float
+  endpoint   String?
+  createdAt  DateTime @default(now())
+}
+
+model ComplianceCheck {
+  id           String   @id @default(cuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id])
+  controlName  String
+  framework    String   @default("PCI_DSS")
+  status       String
+  evidence     String
+  createdAt    DateTime @default(now())
+}
+
+model ThinkingTokenLog {
+  id                String   @id @default(cuid())
+  userId            String
+  user              User     @relation(fields: [userId], references: [id])
+  model             String
+  endpointName      String?
+  featureName       String?
+  usageMetadata     Json
+  responseLatencyMs Int?
+  createdAt         DateTime @default(now())
 }
 
 enum Plan {

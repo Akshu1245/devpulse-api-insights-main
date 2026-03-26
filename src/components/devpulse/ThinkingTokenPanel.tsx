@@ -40,9 +40,7 @@ type Analysis = {
   potential_monthly_savings_inr: number;
 };
 
-type Props = { userId: string };
-
-export default function ThinkingTokenPanel({ userId }: Props) {
+export default function ThinkingTokenPanel() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [stats, setStats] = useState<ThinkingStats | null>(null);
@@ -54,8 +52,8 @@ export default function ThinkingTokenPanel({ userId }: Props) {
     setError(null);
     try {
       const [statsRes, analysisRes] = await Promise.all([
-        api.getThinkingTokenStats(userId) as Promise<{ stats: ThinkingStats; endpoint_breakdown: EndpointBreakdown[] }>,
-        api.analyzeThinkingEfficiency(userId) as Promise<Analysis>,
+        api.getThinkingTokenStats() as Promise<{ stats: ThinkingStats; endpoint_breakdown: EndpointBreakdown[] }>,
+        api.analyzeThinkingEfficiency() as Promise<Analysis>,
       ]);
       setStats(statsRes.stats);
       setEndpoints(statsRes.endpoint_breakdown || []);
@@ -65,7 +63,7 @@ export default function ThinkingTokenPanel({ userId }: Props) {
     } finally {
       setLoading(false);
     }
-  }, [userId]);
+  }, []);
 
   useEffect(() => { void load(); }, [load]);
 

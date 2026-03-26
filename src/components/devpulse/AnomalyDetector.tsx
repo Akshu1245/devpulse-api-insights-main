@@ -79,9 +79,7 @@ const levelConfig = {
   },
 };
 
-type Props = { userId: string };
-
-export default function AnomalyDetector({ userId }: Props) {
+export default function AnomalyDetector() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [summary, setSummary] = useState<LLMSummary | null>(null);
@@ -90,14 +88,14 @@ export default function AnomalyDetector({ userId }: Props) {
     setLoading(true);
     setError(null);
     try {
-      const data = await api.getLLMSummary(userId) as LLMSummary;
+      const data = await api.getLLMSummary() as LLMSummary;
       setSummary(data);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to load usage data");
     } finally {
       setLoading(false);
     }
-  }, [userId]);
+  }, []);
 
   useEffect(() => {
     void load();

@@ -21,8 +21,6 @@ type ScanRow = {
 
 type EnrichedRow = ScanRow & { confidence: number };
 
-type Props = { userId: string };
-
 const riskClass: Record<string, string> = {
   critical: "bg-status-down/15 text-status-down border-status-down/30",
   high: "bg-status-down/10 text-orange-400 border-orange-400/30",
@@ -60,7 +58,7 @@ function deriveConfidence(row: ScanRow): number {
   return Math.min(97, base);
 }
 
-export default function APIScanner({ userId }: Props) {
+export default function APIScanner() {
   const [url, setUrl] = useState("");
   const [scanning, setScanning] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -74,14 +72,14 @@ export default function APIScanner({ userId }: Props) {
     setListError(null);
     setLoadingList(true);
     try {
-      const res = await api.getUserScans(userId);
+      const res = await api.getUserScans();
       setRows((res.scans || []) as ScanRow[]);
     } catch (e) {
       setListError(e instanceof Error ? e.message : "Could not load scans");
     } finally {
       setLoadingList(false);
     }
-  }, [userId]);
+  }, []);
 
   useEffect(() => {
     void loadScans();
@@ -96,7 +94,7 @@ export default function APIScanner({ userId }: Props) {
     setError(null);
     setScanning(true);
     try {
-      await api.scanEndpoint(trimmed, userId);
+      await api.scanEndpoint(trimmed);
       await loadScans();
       setUrl("");
     } catch (e) {

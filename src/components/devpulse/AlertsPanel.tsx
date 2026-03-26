@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { Bell, Loader2, RefreshCw } from "lucide-react";
 import { api } from "@/lib/api";
-import { useAuth } from "@/hooks/useAuth";
 
 type AlertRow = {
   id: string;
@@ -11,10 +10,7 @@ type AlertRow = {
   created_at?: string;
 };
 
-type Props = { userId: string };
-
-export default function AlertsPanel({ userId }: Props) {
-  const { user } = useAuth();
+export default function AlertsPanel() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [alerts, setAlerts] = useState<AlertRow[]>([]);
@@ -24,14 +20,14 @@ export default function AlertsPanel({ userId }: Props) {
     setLoading(true);
     setError(null);
     try {
-      const res = await api.getAlerts(userId);
+      const res = await api.getAlerts();
       setAlerts((res.alerts || []) as AlertRow[]);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to load alerts");
     } finally {
       setLoading(false);
     }
-  }, [userId]);
+  }, []);
 
   useEffect(() => {
     void load();
@@ -40,11 +36,7 @@ export default function AlertsPanel({ userId }: Props) {
   const resolve = async (id: string) => {
     setResolving(id);
     try {
-      const uid = user?.id ?? userId;
-      if (!uid) {
-        throw new Error("Missing user id");
-      }
-      await api.resolveAlert(id, uid);
+      await api.resolveAlert(id);
       await load();
     } catch (e) {
       setError(e instanceof Error ? e.message : "Could not resolve alert");

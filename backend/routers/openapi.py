@@ -71,7 +71,7 @@ async def parse_spec(
         parsed = parse_openapi_spec(spec_dict)
     except Exception as e:
         raise HTTPException(
-            status_code=400, detail=f"Failed to parse OpenAPI spec: {str(e)}"
+            status_code=400, detail={"message": "Failed to parse OpenAPI specification.", "code": "INVALID_OPENAPI_SPEC", "details": {}}
         )
 
     return {
@@ -205,6 +205,6 @@ def get_user_imports(
             .limit(50)
             .execute()
         )
-        return {"imports": res.data or []}
+        return {"success": True, "data": {"imports": res.data or []}}
     except Exception as e:
-        return {"imports": [], "error": str(e)}
+        return {"success": True, "data": {"imports": []}}

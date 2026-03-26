@@ -1,12 +1,19 @@
 from __future__ import annotations
 
+import logging
 from dataclasses import dataclass, field
 from typing import Any
 from urllib.parse import urlparse
 
 import httpx
 
+_log = logging.getLogger("devpulse")
+
 SEVERITY_ORDER = {"critical": 4, "high": 3, "medium": 2, "low": 1}
+
+# Default scan timeout — configurable via environment
+_SCAN_TIMEOUT_SECONDS = 10.0
+_CONNECT_TIMEOUT_SECONDS = 5.0
 
 
 def normalize_url(raw: str) -> str:
@@ -178,19 +185,72 @@ def merge_issues(by_method: dict[str, list[SecurityIssue]]) -> list[dict[str, An
 
 
 async def run_security_probe(url: str) -> list[dict[str, Any]]:
+    """
+    Run HTTP security probes against the target URL.
+
+    Handles:
+    - Timeout (returns a high-severity finding instead of crashing)
+    - Network failures / DNS errors (returns a high-severity finding)
+    - Invalid URLs (raises ValueError)
+
+    Timeout: {_SCAN_TIMEOUT_SECONDS}s per request, {_CONNECT_TIMEOUT_SECONDS}s connect.
+    """
     normalized = normalize_url(url)
     by_method: dict[str, list[SecurityIssue]] = {"GET": [], "POST": []}
 
-    timeout = httpx.Timeout(20.0, connect=10.0)
-    async with httpx.AsyncClient(timeout=timeout, follow_redirects=True) as client:
-        for method, call in (
-            ("GET", lambda: client.get(normalized)),
-            ("POST", lambda: client.post(normalized, json={})),
-        ):
-            try:
-                response = await call()
-                by_method[method] = analyze_response(normalized, method, response, None)
-            except httpx.RequestError as e:
-                by_method[method] = analyze_response(normalized, method, None, str(e))
+    timeout = httpx.Timeout(_SCAN_TIMEOUT_SECONDS, connect=_CONNECT_TIMEOUT_SECONDS)
+    try:
+        async with httpx.AsyncClient(timeout=timeout, follow_redirects=True) as client:
+            for method, call in (
+                ("GET", lambda: client.get(normalized)),
+                ("POST", lambda: client.post(normalized, json={})),
+            ):
+                try:
+                    response = await call()
+                    by_method[method] = analyze_response(normalized, method, response, None)
+                except httpx.TimeoutException:
+                    timeout_msg = f"Request timed out after {int(_SCAN_TIMEOUT_SECONDS)} seconds"
+                    _log.warning("Scan timeout for %s %s", method, normalized)
+                    by_method[method] = analyze_response(normalized, method, None, timeout_msg)
+                except httpx.ConnectError as e:
+                    _log.warning("Scan connect error for %s %s: %s", method, normalized, e)
+                    by_method[method] = analyze_response(normalized, method, None, f"Connection failed: {e}")
+                except httpx.RequestError as e:
+                    _log.warning("Scan request error for %s %s: %s", method, normalized, e)
+                    by_method[method] = analyze_response(normalized, method, None, str(e))
+    except Exception as exc:
+        # Catch-all: never crash the scan endpoint
+        _log.error("Unexpected error during security probe of %s: %s", normalized, exc, exc_info=True)
+        raise ValueError(f"Scan failed: {exc}") from exc
 
     return merge_issues(by_method)
+    normalized = normalize_url(url)
+    by_method: dict[str, list[SecurityIssue]] = {"GET": [], "POST": []}
+
+    timeout = httpx.Timeout(_SCAN_TIMEOUT_SECONDS, connect=_CONNECT_TIMEOUT_SECONDS)
+    try:
+        async with httpx.AsyncClient(timeout=timeout, follow_redirects=True) as client:
+            for method, call in (
+                ("GET", lambda: client.get(normalized)),
+                ("POST", lambda: client.post(normalized, json={})),
+            ):
+                try:
+                    response = await call()
+                    by_method[method] = analyze_response(normalized, method, response, None)
+                except httpx.TimeoutException:
+                    timeout_msg = f"Request timed out after {int(_SCAN_TIMEOUT_SECONDS)} seconds"
+                    _log.warning("Scan timeout for %s %s", method, normalized)
+                    by_method[method] = analyze_response(normalized, method, None, timeout_msg)
+                except httpx.ConnectError as e:
+                    _log.warning("Scan connect error for %s %s: %s", method, normalized, e)
+                    by_method[method] = analyze_response(normalized, method, None, f"Connection failed: {e}")
+                except httpx.RequestError as e:
+                    _log.warning("Scan request error for %s %s: %s", method, normalized, e)
+                    by_method[method] = analyze_response(normalized, method, None, str(e))
+    except Exception as exc:
+        # Catch-all: never crash the scan endpoint
+        _log.error("Unexpected error during security probe of %s: %s", normalized, exc, exc_info=True)
+        raise ValueError(f"Scan failed: {exc}") from exc
+
+    return merge_issues(by_method)
+

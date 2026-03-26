@@ -3,8 +3,6 @@ import { Loader2, RefreshCw } from "lucide-react";
 import { Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { api } from "@/lib/api";
 
-type Props = { userId: string };
-
 type Summary = {
   total_tokens?: number;
   total_cost_inr?: number;
@@ -13,7 +11,7 @@ type Summary = {
   model_totals?: Record<string, number>;
 };
 
-export default function LLMCostPanel({ userId }: Props) {
+export default function LLMCostPanel() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [summary, setSummary] = useState<Summary | null>(null);
@@ -22,7 +20,7 @@ export default function LLMCostPanel({ userId }: Props) {
     setLoading(true);
     setError(null);
     try {
-      const data = await api.getLLMSummary(userId);
+      const data = await api.getLLMSummary();
       setSummary(data as Summary);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to load LLM usage");
@@ -30,7 +28,7 @@ export default function LLMCostPanel({ userId }: Props) {
     } finally {
       setLoading(false);
     }
-  }, [userId]);
+  }, []);
 
   useEffect(() => {
     void load();

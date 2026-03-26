@@ -10,15 +10,13 @@ type CheckRow = {
   checked_at?: string;
 };
 
-type Props = { userId: string };
-
 const statusStyle: Record<string, string> = {
   compliant: "text-status-healthy bg-status-healthy/10 border-status-healthy/25",
   non_compliant: "text-status-down bg-status-down/10 border-status-down/25",
   partial: "text-status-degraded bg-status-degraded/10 border-status-degraded/25",
 };
 
-export default function CompliancePanel({ userId }: Props) {
+export default function CompliancePanel() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [checks, setChecks] = useState<CheckRow[]>([]);
@@ -29,14 +27,14 @@ export default function CompliancePanel({ userId }: Props) {
     setLoading(true);
     setError(null);
     try {
-      const res = await api.getCompliance(userId);
+      const res = await api.getCompliance();
       setChecks((res.checks || []) as CheckRow[]);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to load compliance");
     } finally {
       setLoading(false);
     }
-  }, [userId]);
+  }, []);
 
   useEffect(() => {
     void load();
@@ -47,7 +45,7 @@ export default function CompliancePanel({ userId }: Props) {
     setRunning(controlName);
     setError(null);
     try {
-      await api.runComplianceCheck({ user_id: userId, control_name: controlName, evidence });
+      await api.runComplianceCheck({ control_name: controlName, evidence });
       await load();
     } catch (e) {
       setError(e instanceof Error ? e.message : "Check failed");
@@ -70,7 +68,7 @@ export default function CompliancePanel({ userId }: Props) {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `devpulse-compliance-${userId.slice(0, 8)}.txt`;
+    a.download = `devpulse-compliance-report.txt`;
     a.click();
     URL.revokeObjectURL(url);
   };

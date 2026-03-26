@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useState } from "react";
-import { FileText, CheckCircle, XCircle, AlertTriangle, Loader2, RefreshCw, Download, Shield } from "lucide-react";
+import { useCallback, useState } from "react";
+import { FileText, CheckCircle, XCircle, AlertTriangle, Loader2, Download, Shield } from "lucide-react";
 import { api } from "@/lib/api";
 
 type PCIRequirement = {
@@ -54,9 +54,7 @@ type ComplianceReport = {
   };
 };
 
-type Props = { userId: string };
-
-export default function ComplianceReportPanel({ userId }: Props) {
+export default function ComplianceReportPanel() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [report, setReport] = useState<ComplianceReport | null>(null);
@@ -67,14 +65,14 @@ export default function ComplianceReportPanel({ userId }: Props) {
     setLoading(true);
     setError(null);
     try {
-      const res = await api.generateComplianceReport(userId, orgName || undefined, "both");
+      const res = await api.generateComplianceReport(orgName || undefined, "both");
       setReport(res as ComplianceReport);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to generate compliance report");
     } finally {
       setLoading(false);
     }
-  }, [userId, orgName]);
+  }, [orgName]);
 
   const statusIcon = (status: string) => {
     switch (status) {
@@ -186,7 +184,7 @@ export default function ComplianceReportPanel({ userId }: Props) {
             </div>
             <div className="flex gap-2">
               <button
-                onClick={downloadReport}
+                onClick={downloadJsonReport}
                 className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-muted/30 border border-border text-xs text-muted-foreground hover:text-foreground"
               >
                 <Download className="w-3 h-3" />
@@ -296,59 +294,3 @@ export default function ComplianceReportPanel({ userId }: Props) {
     </div>
   );
 }
-import { FileText, CheckCircle, XCircle, AlertTriangle, Loader2, RefreshCw, Download, Shield } from "lucide-react";
-import { api } from "@/lib/api";
-
-type PCIRequirement = {
-  requirement_id: string;
-  title: string;
-  description: string;
-  owasp_category: string;
-  status: "PASS" | "FAIL" | "WARN";
-  evidence: string;
-  findings: Array<{ issue: string; risk_level: string; recommendation: string }>;
-  remediation: string;
-  gdpr_articles: string[];
-};
-
-type ComplianceReport = {
-  report_id: string;
-  generated_at: string;
-  organization: string;
-  scan_summary: {
-    total_findings: number;
-    critical: number;
-    high: number;
-    medium: number;
-    low: number;
-  };
-  pci_dss: {
-    version: string;
-    overall_status: "COMPLIANT" | "NON_COMPLIANT" | "PARTIAL_COMPLIANCE";
-    overall_message: string;
-    compliance_percentage: number;
-    requirements_pass: number;
-    requirements_fail: number;
-    requirements_warn: number;
-    requirements: PCIRequirement[];
-  };
-  gdpr: {
-    regulation: string;
-    overall_status: "PASS" | "FAIL";
-    checks: Array<{
-      article: string;
-      title: string;
-      status: "PASS" | "FAIL";
-      evidence: string;
-      remediation?: string | null;
-    }>;
-  };
-  attestation: {
-    tool: string;
-    version: string;
-    scan_method: string;
-    note: string;
-  };
-};
-
-type Props = { userId: string };

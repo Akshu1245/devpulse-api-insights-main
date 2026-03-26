@@ -4,25 +4,25 @@ import { api } from "./api";
 /**
  * React Query hooks for API endpoints
  * These hooks provide caching, background refetching, and request deduplication
+ * Note: userId is no longer passed - auth is handled via JWT in Authorization header
  */
 
 // Query keys factory for consistent key management
 export const queryKeys = {
-  scans: (userId: string) => ["scans", userId] as const,
-  alerts: (userId: string) => ["alerts", userId] as const,
-  compliance: (userId: string) => ["compliance", userId] as const,
-  llmSummary: (userId: string) => ["llm", "summary", userId] as const,
-  llmUsage: (userId: string) => ["llm", "usage", userId] as const,
+  scans: () => ["scans"] as const,
+  alerts: () => ["alerts"] as const,
+  compliance: () => ["compliance"] as const,
+  llmSummary: () => ["llm", "summary"] as const,
+  llmUsage: () => ["llm", "usage"] as const,
 };
 
 /**
  * Hook to fetch user's scans
  */
-export function useUserScans(userId: string) {
+export function useUserScans() {
   return useQuery({
-    queryKey: queryKeys.scans(userId),
-    queryFn: () => api.getUserScans(userId),
-    enabled: !!userId,
+    queryKey: queryKeys.scans(),
+    queryFn: () => api.getUserScans(),
     staleTime: 60 * 1000, // 1 minute
   });
 }
@@ -30,11 +30,10 @@ export function useUserScans(userId: string) {
 /**
  * Hook to fetch user's alerts
  */
-export function useAlerts(userId: string) {
+export function useAlerts() {
   return useQuery({
-    queryKey: queryKeys.alerts(userId),
-    queryFn: () => api.getAlerts(userId),
-    enabled: !!userId,
+    queryKey: queryKeys.alerts(),
+    queryFn: () => api.getAlerts(),
     staleTime: 30 * 1000, // 30 seconds
   });
 }
@@ -42,11 +41,10 @@ export function useAlerts(userId: string) {
 /**
  * Hook to fetch user's compliance data
  */
-export function useCompliance(userId: string) {
+export function useCompliance() {
   return useQuery({
-    queryKey: queryKeys.compliance(userId),
-    queryFn: () => api.getCompliance(userId),
-    enabled: !!userId,
+    queryKey: queryKeys.compliance(),
+    queryFn: () => api.getCompliance(),
     staleTime: 60 * 1000, // 1 minute
   });
 }
@@ -54,11 +52,10 @@ export function useCompliance(userId: string) {
 /**
  * Hook to fetch LLM summary
  */
-export function useLLMSummary(userId: string) {
+export function useLLMSummary() {
   return useQuery({
-    queryKey: queryKeys.llmSummary(userId),
-    queryFn: () => api.getLLMSummary(userId),
-    enabled: !!userId,
+    queryKey: queryKeys.llmSummary(),
+    queryFn: () => api.getLLMSummary(),
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 }
@@ -66,11 +63,10 @@ export function useLLMSummary(userId: string) {
 /**
  * Hook to fetch LLM usage
  */
-export function useLLMUsage(userId: string) {
+export function useLLMUsage() {
   return useQuery({
-    queryKey: queryKeys.llmUsage(userId),
-    queryFn: () => api.getLLMUsage(userId),
-    enabled: !!userId,
+    queryKey: queryKeys.llmUsage(),
+    queryFn: () => api.getLLMUsage(),
     staleTime: 5 * 1000, // 5 seconds - frequently updated
   });
 }
@@ -82,11 +78,11 @@ export function useResolveAlert() {
   const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: ({ alertId, userId }: { alertId: string; userId: string }) =>
-      api.resolveAlert(alertId, userId),
-    onSuccess: (_, { userId }) => {
+    mutationFn: ({ alertId }: { alertId: string }) =>
+      api.resolveAlert(alertId),
+    onSuccess: () => {
       // Invalidate alerts query to refetch updated data
-      queryClient.invalidateQueries({ queryKey: queryKeys.alerts(userId) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.alerts() });
     },
   });
 }
@@ -98,11 +94,11 @@ export function useRunComplianceCheck() {
   const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: (data: { user_id: string; control_name: string; evidence: string }) =>
+    mutationFn: (data: { control_name: string; evidence: string }) =>
       api.runComplianceCheck(data),
-    onSuccess: (_, variables) => {
-      // Invalidate compliance query for this user
-      queryClient.invalidateQueries({ queryKey: queryKeys.compliance(variables.user_id) });
+    onSuccess: () => {
+      // Invalidate compliance query
+      queryClient.invalidateQueries({ queryKey: queryKeys.compliance() });
     },
   });
 }
@@ -114,12 +110,12 @@ export function useLogLLMUsage() {
   const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: (data: { user_id: string; model: string; tokens_used: number; cost_inr: number }) =>
+    mutationFn: (data: { model: string; tokens_used: number; cost_inr: number }) =>
       api.logLLMUsage(data),
-    onSuccess: (_, variables) => {
-      // Invalidate LLM queries for this user
-      queryClient.invalidateQueries({ queryKey: queryKeys.llmUsage(variables.user_id) });
-      queryClient.invalidateQueries({ queryKey: queryKeys.llmSummary(variables.user_id) });
+    onSuccess: () => {
+      // Invalidate LLM queries
+      queryClient.invalidateQueries({ queryKey: queryKeys.llmUsage() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.llmSummary() });
     },
   });
 }
@@ -131,11 +127,12 @@ export function useScanEndpoint() {
   const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: ({ endpoint, userId }: { endpoint: string; userId: string }) =>
-      api.scanEndpoint(endpoint, userId),
-    onSuccess: (_, { userId }) => {
+    mutationFn: ({ endpoint, method }: { endpoint: string; method?: string }) =>
+      api.scanEndpoint(endpoint, method),
+    onSuccess: () => {
       // Invalidate scans query to refetch updated data
-      queryClient.invalidateQueries({ queryKey: queryKeys.scans(userId) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.scans() });
     },
   });
 }
+

@@ -5,3 +5,9 @@ supabase
 python-dotenv
 pydantic
 requests
+bcrypt
+python-jose[cryptography]
+pytest
+pytest-asyncio
+pytest-asyncio
+

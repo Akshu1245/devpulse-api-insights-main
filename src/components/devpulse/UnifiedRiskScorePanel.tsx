@@ -27,8 +27,6 @@ type RiskScore = {
   };
 };
 
-type Props = { userId: string };
-
 const riskColor = (level: string) => {
   switch (level?.toLowerCase()) {
     case "critical": return "text-red-400 bg-red-400/10 border-red-400/30";
@@ -50,7 +48,7 @@ const gradeColor = (grade: string) => {
   }
 };
 
-export default function UnifiedRiskScorePanel({ userId }: Props) {
+export default function UnifiedRiskScorePanel() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [scores, setScores] = useState<RiskScore[]>([]);
@@ -59,14 +57,14 @@ export default function UnifiedRiskScorePanel({ userId }: Props) {
     setLoading(true);
     setError(null);
     try {
-      const res = await api.getUnifiedRiskScore(userId) as { scores: RiskScore[] };
+      const res = await api.getUnifiedRiskScore() as { scores: RiskScore[] };
       setScores(res.scores || []);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to load risk scores");
     } finally {
       setLoading(false);
     }
-  }, [userId]);
+  }, []);
 
   useEffect(() => { void load(); }, [load]);
 

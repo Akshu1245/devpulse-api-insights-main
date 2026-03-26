@@ -119,7 +119,7 @@ def get_compliance(user_id: str, auth_user_id: str = Depends(get_current_user_id
             .execute()
         )
         rows = res2.data or []
-    return {"checks": rows}
+    return {"success": True, "data": {"checks": rows}}
 
 
 class CheckRequest(BaseModel):
@@ -157,7 +157,8 @@ def run_check(req: CheckRequest, auth_user_id: str = Depends(get_current_user_id
         .execute()
     )
     data = upd.data or []
-    return data[0] if data else found[0]
+    result = data[0] if data else found[0]
+    return {"success": True, "data": result}
 
 
 # ── Compliance Report (JSON) ──────────────────────────────────────────────────
@@ -197,7 +198,7 @@ def generate_report(
         organization_name=req.organization_name,
         report_type=req.report_type,
     )
-    return report
+    return {"success": True, "data": report}
 
 
 # ── Compliance Report (PDF Download) ──────────────────────────────────────────
@@ -263,7 +264,7 @@ def get_owasp_pci_mapping():
     """Return the full OWASP → PCI DSS v4.0.1 mapping dictionary."""
     from services.compliance_mapping import OWASP_PCI_DSS_MAPPING
 
-    return {"mapping": OWASP_PCI_DSS_MAPPING}
+    return {"success": True, "data": {"mapping": OWASP_PCI_DSS_MAPPING}}
 
 
 @router.get("/compliance/mapping/owasp-gdpr")
@@ -271,7 +272,7 @@ def get_owasp_gdpr_mapping():
     """Return the full OWASP → GDPR mapping dictionary."""
     from services.compliance_mapping import OWASP_GDPR_MAPPING
 
-    return {"mapping": OWASP_GDPR_MAPPING}
+    return {"success": True, "data": {"mapping": OWASP_GDPR_MAPPING}}
 
 
 @router.get("/compliance/mapping/gdpr-criteria")
@@ -279,4 +280,4 @@ def get_gdpr_criteria():
     """Return the GDPR standalone assessment criteria."""
     from services.compliance_mapping import GDPR_ASSESSMENT_CRITERIA
 
-    return {"criteria": GDPR_ASSESSMENT_CRITERIA}
+    return {"success": True, "data": {"criteria": GDPR_ASSESSMENT_CRITERIA}}

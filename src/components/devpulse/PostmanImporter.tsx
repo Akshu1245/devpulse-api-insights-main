@@ -33,9 +33,7 @@ type ImportResult = {
   };
 };
 
-type Props = { userId: string };
-
-export default function PostmanImporter({ userId }: Props) {
+export default function PostmanImporter() {
   const [dragging, setDragging] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -57,7 +55,7 @@ export default function PostmanImporter({ userId }: Props) {
       const text = await file.text();
       const collection = JSON.parse(text);
 
-      const res = await api.importPostmanCollection(userId, collection, true);
+      const res = await api.importPostmanCollection(collection, true);
       setResult(res as ImportResult);
     } catch (e) {
       if (e instanceof SyntaxError) {
@@ -68,7 +66,7 @@ export default function PostmanImporter({ userId }: Props) {
     } finally {
       setLoading(false);
     }
-  }, [userId]);
+  }, []);
 
   const onDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();
